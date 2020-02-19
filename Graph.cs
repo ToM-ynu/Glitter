@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Yoshimura
+namespace YoshimuraGraph
 {
     class Graph
     {
