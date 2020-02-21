@@ -5,24 +5,48 @@ using System.IO;
 using System.Linq;
 using CsvHelper;
 using QuickGraph;
-using QuickGraph.Algorithms.Observers;
-using QuickGraph.Algorithms.ShortestPath;
+using QuickGraph.Algorithms;
 
 namespace Yoshimura {
     public class LeftEdgeAlgorithm {
         Graph verticalGraph;
         Graph horizontalGraph;
 
+        List < (string net, int track) > routingResult;
+
         public LeftEdgeAlgorithm (IEnumerable<Terminal> upper, IEnumerable<Terminal> lower) {
             verticalGraph = new Graph ();
             horizontalGraph = new Graph ();
             CreateHorizontalGraph (upper, lower);
             CreateVerticalGraph (upper, lower);
-
-            foreach (var item in verticalGraph.Edges) {
+            Console.WriteLine ("\n");
+            var piyo = LeafVerticalList ();
+            foreach (var item in piyo) {
                 Console.WriteLine (item);
             }
 
+        }
+
+        private void Routing () {
+            
+        }
+
+        private List<string> LeafVerticalList () {
+
+            var result = new List<string> ();
+            Console.WriteLine (verticalGraph.Vertices.Count ());
+            Console.WriteLine (verticalGraph.Edges.Count ());
+            foreach (var vertical in verticalGraph.Vertices) {
+                var flag = true;
+                foreach (var edge in verticalGraph.Edges) {
+                    if (edge.Source == vertical) flag = false;
+                }
+                if (flag) {
+                    //This vertical is not source of all edges.
+                    result.Add (vertical);
+                }
+            }
+            return result;
         }
 
         private void CreateVerticalGraph (IEnumerable<Terminal> upper, IEnumerable<Terminal> lower) {
@@ -34,9 +58,24 @@ namespace Yoshimura {
                 else if (verticalColisionList.Count > 1) {
                     throw new InvalidDataException ("Invalid input data");
                 } else {
+                    if (item.net == verticalColisionList[0].net) continue; //avoid self-loops
                     var temp = new Edge ("net" + item.net, item.net, verticalColisionList[0].net, 1);
                     verticalGraph.AddEdge (temp);
                 }
+            }
+#if DEBUG
+            foreach (var item in verticalGraph.Edges) {
+                Console.WriteLine (item);
+            }
+#endif
+            //To checking graph is DAG or not, we are using exception of topologicalsort.
+            //try-catch is very slow.
+            try {
+                var hoge = verticalGraph.TopologicalSort ();
+            } catch (NonAcyclicGraphException) {
+
+                Console.WriteLine ("This is non-DAG graph. By LEA, there is no solution.");
+                Environment.Exit (1);
             }
 
         }
@@ -63,7 +102,7 @@ namespace Yoshimura {
     class Graph : AdjacencyGraph<string, Edge> {
         public void AddUndirectedEdge (Edge edge) {
             AddEdge (new Edge (edge.Name + "a", edge.Target, edge.Source, edge.Weight));
-            AddEdge (new Edge (edge.Name + "b", edge.Target, edge.Source, edge.Weight));
+            AddEdge (new Edge (edge.Name + "b", edge.Source, edge.Target, edge.Weight));
 
         }
     }
@@ -99,8 +138,8 @@ namespace Yoshimura {
                 lowerSide = result.Where (a => a.ul == "l").Select (b => new Terminal (b));
 
             }
-            Console.WriteLine (upperSide.Count ());
-            Console.WriteLine (lowerSide.Count ());
+            //Console.WriteLine (upperSide.Count ());
+            //Console.WriteLine (lowerSide.Count ());
             var hoge = new LeftEdgeAlgorithm (upperSide, lowerSide);
 
         }
