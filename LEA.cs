@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Text;
 using CsvHelper;
 using QuickGraph;
 using QuickGraph.Algorithms;
@@ -19,23 +20,22 @@ namespace Yoshimura {
             horizontalGraph = new Graph ();
             CreateHorizontalGraph (upper, lower);
             CreateVerticalGraph (upper, lower);
-            Console.WriteLine ("\n");
-            var piyo = LeafVerticalList ();
-            foreach (var item in piyo) {
-                Console.WriteLine (item);
+            var sweepIndex = upper.Concat (lower).Distinct((a,b)=>a.));
+            Console.WriteLine ("Creating Graph is done.");
+            foreach (var item in sweepIndex) {
+                var leafList = VerticalLeafList ();
+                leafList.ToString<string> ().WriteLine ();
+                break;
             }
-
         }
 
         private void Routing () {
-            
+
         }
 
-        private List<string> LeafVerticalList () {
+        private List<string> VerticalLeafList () {
 
             var result = new List<string> ();
-            Console.WriteLine (verticalGraph.Vertices.Count ());
-            Console.WriteLine (verticalGraph.Edges.Count ());
             foreach (var vertical in verticalGraph.Vertices) {
                 var flag = true;
                 foreach (var edge in verticalGraph.Edges) {
@@ -47,6 +47,15 @@ namespace Yoshimura {
                 }
             }
             return result;
+        }
+
+        private List<string> HorizontalAdjacentVertexList (string source) {
+            var set = new HashSet<string> ();
+            foreach (var item in horizontalGraph.Edges.Where (a => a.Source == source || a.Target == source)) {
+                set.Add (item.Source);
+                set.Add (item.Target);
+            }
+            return set.ToList ();
         }
 
         private void CreateVerticalGraph (IEnumerable<Terminal> upper, IEnumerable<Terminal> lower) {
@@ -113,6 +122,7 @@ namespace Yoshimura {
             Target = t;
             Weight = w;
         }
+
         public string Name { get; set; }
         public string Source { get; set; }
         public string Target { get; set; }
@@ -138,8 +148,6 @@ namespace Yoshimura {
                 lowerSide = result.Where (a => a.ul == "l").Select (b => new Terminal (b));
 
             }
-            //Console.WriteLine (upperSide.Count ());
-            //Console.WriteLine (lowerSide.Count ());
             var hoge = new LeftEdgeAlgorithm (upperSide, lowerSide);
 
         }
@@ -167,5 +175,22 @@ namespace Yoshimura {
         public override string ToString () {
             return $"{ul},{net},{xAxis.ToString()}";
         }
+    }
+    static class Extension {
+        public static void WriteLine (this object obj, string text = "{0}") {
+            Console.WriteLine (text, obj);
+        }
+
+        public static string ToString<T> (this List<T> list, Func<T, string> toStr = null, string format = "{0},") {
+            //default
+            if (toStr == null) toStr = (t) => t.ToString ();
+            var sb = new StringBuilder ("[");
+            foreach (var str in list.Select (a => a.ToString ())) {
+                sb.AppendFormat (format, str);
+            }
+            sb.AppendLine ("]");
+            return sb.ToString ();
+        }
+
     }
 }
