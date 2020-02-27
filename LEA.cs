@@ -20,17 +20,22 @@ namespace Yoshimura {
             horizontalGraph = new Graph ();
             CreateHorizontalGraph (upper, lower);
             CreateVerticalGraph (upper, lower);
-            var sweepIndex = upper.Concat (lower).Distinct((a,b)=>a.));
-            Console.WriteLine ("Creating Graph is done.");
-            foreach (var item in sweepIndex) {
-                var leafList = VerticalLeafList ();
-                leafList.ToString<string> ().WriteLine ();
-                break;
+            var sweepIndex = upper.Concat (lower).OrderBy (b => b.xAxis).Distinct (a => a.net).Select (c => c.net).ToList ();
+            "Creating Graph is done.".WriteLine ();
+            var i = 0;
+            while (verticalGraph.VertexCount != 0) {
+#if DEBUG
+                "SweepIndex is".Write ();
+                sweepIndex.ToString<string> ().Write ();
+#endif
+                var leafList = VerticalLeafList ().OrderBy (a => sweepIndex.IndexOf (a)).ToList ();
+#if DEBUG
+                leafList.ToString<string> ().Write ();
+#endif
+                leafList.ForEach (a => verticalGraph.RemoveVertex (a));
+                i++;
+                if (verticalGraph.VertexCount == 0 || i == 100) break;
             }
-        }
-
-        private void Routing () {
-
         }
 
         private List<string> VerticalLeafList () {
@@ -181,6 +186,10 @@ namespace Yoshimura {
             Console.WriteLine (text, obj);
         }
 
+        public static void Write (this object obj, string text = "{0}") {
+            Console.Write (text, obj);
+        }
+
         public static string ToString<T> (this List<T> list, Func<T, string> toStr = null, string format = "{0},") {
             //default
             if (toStr == null) toStr = (t) => t.ToString ();
@@ -192,5 +201,23 @@ namespace Yoshimura {
             return sb.ToString ();
         }
 
+        //from https://qiita.com/wipiano/items/4437e80dc99a30f303f0
+        public static IEnumerable<TItem> Distinct<TItem, TKey> (this IEnumerable<TItem> source, Func<TItem, TKey> keySelector) {
+            IEnumerable<TItem> Enumerate () {
+                var set = new HashSet<TKey> ();
+                foreach (var item in source)
+                    if (set.Add (keySelector (item))) yield return item;
+            }
+
+            if (source == null)
+                throw new ArgumentNullException (nameof (source));
+
+            if (keySelector == null)
+                throw new ArgumentNullException (nameof (keySelector));
+
+            return Enumerate ();
+        }
+
     }
+
 }
