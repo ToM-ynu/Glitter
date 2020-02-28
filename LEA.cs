@@ -23,15 +23,21 @@ namespace Yoshimura {
             var sweepIndex = upper.Concat (lower).OrderBy (b => b.xAxis).Distinct (a => a.net).Select (c => c.net).ToList ();
             "Creating Graph is done.".WriteLine ();
             var i = 0;
-            while (verticalGraph.VertexCount != 0) {
 #if DEBUG
-                "SweepIndex is".Write ();
-                sweepIndex.ToString<string> ().Write ();
+            "SweepIndex is".Write ();
+            sweepIndex.ToString<string> ().Write ();
 #endif
-                var leafList = VerticalLeafList ().OrderBy (a => sweepIndex.IndexOf (a)).ToList ();
+            while (verticalGraph.VertexCount != 0) {
+
+                var leafList = VerticalLeafList ().OrderBy (a => sweepIndex.IndexOf (a)).ToList (); // Test is not enough
+                leafList = leafList.Where (a => !IsStraightWire (a, upper, lower)).ToList ();
 #if DEBUG
                 leafList.ToString<string> ().Write ();
 #endif
+
+                foreach (var item in leafList) {
+                    if (IsStraightWire (item, upper, lower)) continue;
+                }
                 leafList.ForEach (a => verticalGraph.RemoveVertex (a));
                 i++;
                 if (verticalGraph.VertexCount == 0 || i == 100) break;
@@ -110,6 +116,10 @@ namespace Yoshimura {
                     }
                 }
             }
+        }
+
+        private bool IsStraightWire (string net, IEnumerable<Terminal> upper, IEnumerable<Terminal> lower) {
+            return upper.First (a => a.net == net).xAxis == lower.First (a => a.net == net).xAxis;
         }
     }
 
