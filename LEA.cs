@@ -12,9 +12,6 @@ namespace Yoshimura {
     public class LeftEdgeAlgorithm {
         Graph verticalGraph;
         Graph horizontalGraph;
-
-        List < (string net, int track) > routingResult;
-
         public LeftEdgeAlgorithm (IEnumerable<Terminal> upper, IEnumerable<Terminal> lower) {
             verticalGraph = new Graph ();
             horizontalGraph = new Graph ();
@@ -22,26 +19,36 @@ namespace Yoshimura {
             CreateVerticalGraph (upper, lower);
             var sweepIndex = upper.Concat (lower).OrderBy (b => b.xAxis).Distinct (a => a.net).Select (c => c.net).ToList ();
             "Creating Graph is done.".WriteLine ();
-            var i = 0;
 #if DEBUG
             "SweepIndex is".Write ();
             sweepIndex.ToString<string> ().Write ();
 #endif
-            while (verticalGraph.VertexCount != 0) {
-
-                var leafList = VerticalLeafList ().OrderBy (a => sweepIndex.IndexOf (a)).ToList (); // Test is not enough
-                leafList = leafList.Where (a => !IsStraightWire (a, upper, lower)).ToList ();
+            var straightWireList = upper.Where (a => IsStraightWire (a.net, upper, lower)).Select (b => b.net).ToList ();
+            straightWireList.ForEach (a => verticalGraph.RemoveVertex (a));
 #if DEBUG
-                leafList.ToString<string> ().Write ();
+            "straight wire list is ".Write ();
+            straightWireList.ToString<string> ().Write ();
 #endif
 
-                foreach (var item in leafList) {
-                    if (IsStraightWire (item, upper, lower)) continue;
+            var channelInfo = new Dictionary<int, List<string>> (); //Key.Channel number , Value. applied track
+            for (int trackNumber = 0; verticalGraph.VertexCount != 0; trackNumber++) {
+                channelInfo[trackNumber] = new List<string> ();
+                var leafList = VerticalLeafList ().OrderBy (a => sweepIndex.IndexOf (a)).ToList (); // Test is not enough
+#if DEBUG
+                "leaf wire list is ".Write ();
+                leafList.ToString<string> ().Write ();
+#endif
+                foreach (var leaf in leafList) {
+                    if (!IsDirectPassExist (leaf, channelInfo[trackNumber])) {
+                        channelInfo[trackNumber].Add (leaf);
+                        verticalGraph.RemoveVertex (leaf);
+                    }
                 }
-                leafList.ForEach (a => verticalGraph.RemoveVertex (a));
-                i++;
-                if (verticalGraph.VertexCount == 0 || i == 100) break;
+                if (trackNumber == 100) throw new Exception ("Routing is failed");
             }
+
+            OutputResult (channelInfo);
+
         }
 
         private List<string> VerticalLeafList () {
@@ -60,6 +67,10 @@ namespace Yoshimura {
             return result;
         }
 
+        private bool IsDirectPassExist (string source, List<string> target) {
+            return horizontalGraph.Edges.Where (a => a.Source == source).Select (a => a.Target).Intersect (target).Count () != 0;
+
+        }
         private List<string> HorizontalAdjacentVertexList (string source) {
             var set = new HashSet<string> ();
             foreach (var item in horizontalGraph.Edges.Where (a => a.Source == source || a.Target == source)) {
@@ -102,15 +113,14 @@ namespace Yoshimura {
         private void CreateHorizontalGraph (IEnumerable<Terminal> upper, IEnumerable<Terminal> lower) {
             var nets = new HashSet<string> (upper.Select (a => a.net).Concat (lower.Select (b => b.net)));
             horizontalGraph.AddVertexRange (nets);
-            var hoge = new List<Terminal> (upper.Concat (lower));
-            var terminalSections = new List < (string net, int begin, int end) > ();
-            foreach (var item in nets) {
-                var terminalPositions = hoge.Where (a => a.net == item);
-                terminalSections.Add ((item, terminalPositions.Select (a => a.xAxis).Min (), terminalPositions.Select (a => a.xAxis).Max ()));
+            var terminalSections = new List < (string net, int min, int max) > ();
+            foreach (var net in nets) {
+                var terminalPositions = upper.Concat (lower).Where (a => a.net == net).Select (a => a.xAxis);
+                terminalSections.Add ((net, terminalPositions.Min (), terminalPositions.Max ()));
             }
             for (var i = 0; i < terminalSections.Count; i++) {
                 for (int j = i + 1; j < terminalSections.Count; j++) {
-                    if (terminalSections[i].begin <= terminalSections[j].begin && terminalSections[i].begin <= terminalSections[j].end) {
+                    if (terminalSections[i].min <= terminalSections[j].min && terminalSections[j].min <= terminalSections[i].max) {
                         var temp = new Edge ("net" + terminalSections[i].net + terminalSections[j].net, terminalSections[i].net, terminalSections[j].net, 1);
                         horizontalGraph.AddUndirectedEdge (temp);
                     }
@@ -120,6 +130,13 @@ namespace Yoshimura {
 
         private bool IsStraightWire (string net, IEnumerable<Terminal> upper, IEnumerable<Terminal> lower) {
             return upper.First (a => a.net == net).xAxis == lower.First (a => a.net == net).xAxis;
+        }
+
+        private void OutputResult (Dictionary<int, List<string>> dir) {
+            foreach (var item in dir) {
+                item.Key.Write ();
+                (":" + item.Value.ToString<string> ()).Write ();
+            }
         }
     }
 
@@ -200,7 +217,7 @@ namespace Yoshimura {
             Console.Write (text, obj);
         }
 
-        public static string ToString<T> (this List<T> list, Func<T, string> toStr = null, string format = "{0},") {
+        public static string ToString<T> (this IEnumerable<T> list, Func<T, string> toStr = null, string format = "{0},") {
             //default
             if (toStr == null) toStr = (t) => t.ToString ();
             var sb = new StringBuilder ("[");
