@@ -15,10 +15,14 @@ namespace Yoshimura {
         public LeftEdgeAlgorithm (IEnumerable<Terminal> upper, IEnumerable<Terminal> lower) {
             verticalGraph = new Graph ();
             horizontalGraph = new Graph ();
-            CreateHorizontalGraph (upper, lower);
             CreateVerticalGraph (upper, lower);
+            CreateHorizontalGraph (upper, lower);
             var sweepIndex = upper.Concat (lower).OrderBy (b => b.xAxis).Distinct (a => a.net).Select (c => c.net).ToList ();
             "Creating Graph is done.".WriteLine ();
+            Console.WriteLine ("VCG");
+            verticalGraph.Edges.ToString<Edge> ().Write ();
+            Console.WriteLine ("HCG");
+            horizontalGraph.Edges.ToString<Edge> ().Write ();
 #if DEBUG
             "SweepIndex is".Write ();
             sweepIndex.ToString<string> ().Write ();
@@ -94,11 +98,6 @@ namespace Yoshimura {
                     verticalGraph.AddEdge (temp);
                 }
             }
-#if DEBUG
-            foreach (var item in verticalGraph.Edges) {
-                Console.WriteLine (item);
-            }
-#endif
             //To checking graph is DAG or not, we are using exception of topologicalsort.
             //try-catch is very slow.
             try {
@@ -108,7 +107,6 @@ namespace Yoshimura {
                 Console.WriteLine ("This is non-DAG graph. By LEA, there is no solution.");
                 Environment.Exit (1);
             }
-
         }
         private void CreateHorizontalGraph (IEnumerable<Terminal> upper, IEnumerable<Terminal> lower) {
             var nets = new HashSet<string> (upper.Select (a => a.net).Concat (lower.Select (b => b.net)));
@@ -116,7 +114,9 @@ namespace Yoshimura {
             var terminalSections = new List < (string net, int min, int max) > ();
             foreach (var net in nets) {
                 var terminalPositions = upper.Concat (lower).Where (a => a.net == net).Select (a => a.xAxis);
-                terminalSections.Add ((net, terminalPositions.Min (), terminalPositions.Max ()));
+                var hoge = (net, terminalPositions.Min (), terminalPositions.Max ());
+                if (hoge.Item2 != hoge.Item3)
+                    terminalSections.Add (hoge);
             }
             for (var i = 0; i < terminalSections.Count; i++) {
                 for (int j = i + 1; j < terminalSections.Count; j++) {
@@ -160,8 +160,11 @@ namespace Yoshimura {
         public string Target { get; set; }
         public double Weight { get; set; }
 
+        // public override string ToString () {
+        //     return $"{Name},{Source},{Target},{Weight.ToString()}";
+        // }
         public override string ToString () {
-            return $"{Name},{Source},{Target},{Weight.ToString()}";
+            return $"{Source}->{Target}";
         }
     }
 

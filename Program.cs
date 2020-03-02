@@ -6,7 +6,6 @@ namespace Yoshimura
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("Hello World!");
             var channel = new Channel("channel.csv");
         }
 
