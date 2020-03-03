@@ -33,14 +33,12 @@ namespace Yoshimura {
             "straight wire list is ".Write ();
             straightWireList.ToString<string> ().Write ();
 #endif
-
             var channelInfo = new Dictionary<int, List<string>> (); //Key.Channel number , Value. applied track
             for (int trackNumber = 0; verticalGraph.VertexCount != 0; trackNumber++) {
                 channelInfo[trackNumber] = new List<string> ();
                 var leafList = VerticalLeafList ().OrderBy (a => sweepIndex.IndexOf (a)).ToList (); // Test is not enough
 #if DEBUG
-                "leaf wire list is ".Write ();
-                leafList.ToString<string> ().Write ();
+                verticalGraph.Edges.ToString<Edge> ().Write ();
 #endif
                 foreach (var leaf in leafList) {
                     if (!IsDirectPassExist (leaf, channelInfo[trackNumber])) {
@@ -50,9 +48,7 @@ namespace Yoshimura {
                 }
                 if (trackNumber == 100) throw new Exception ("Routing is failed");
             }
-
             OutputResult (channelInfo);
-
         }
 
         private List<string> VerticalLeafList () {
@@ -73,7 +69,6 @@ namespace Yoshimura {
 
         private bool IsDirectPassExist (string source, List<string> target) {
             return horizontalGraph.Edges.Where (a => a.Source == source).Select (a => a.Target).Intersect (target).Count () != 0;
-
         }
         private List<string> HorizontalAdjacentVertexList (string source) {
             var set = new HashSet<string> ();
