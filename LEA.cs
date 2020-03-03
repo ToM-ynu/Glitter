@@ -99,8 +99,11 @@ namespace Yoshimura {
                 var hoge = verticalGraph.TopologicalSort ();
             } catch (NonAcyclicGraphException) {
 
+                "VCG".WriteLine ();
+                verticalGraph.Edges.ToString<Edge> ().Write ();
                 Console.WriteLine ("This is non-DAG graph. By LEA, there is no solution.");
                 Environment.Exit (1);
+
             }
         }
         private void CreateHorizontalGraph (IEnumerable<Terminal> upper, IEnumerable<Terminal> lower) {
@@ -114,9 +117,16 @@ namespace Yoshimura {
                     terminalSections.Add (hoge);
             }
             for (var i = 0; i < terminalSections.Count; i++) {
+                var source = terminalSections[i];
                 for (int j = i + 1; j < terminalSections.Count; j++) {
-                    if (terminalSections[i].min <= terminalSections[j].min && terminalSections[j].min <= terminalSections[i].max) {
-                        var temp = new Edge ("net" + terminalSections[i].net + terminalSections[j].net, terminalSections[i].net, terminalSections[j].net, 1);
+                    var target = terminalSections[j];
+                    if (source.min <= target.min && target.min <= source.max) {
+                        var temp =
+                            new Edge ("net" + terminalSections[i].net + target.net, terminalSections[i].net, target.net, 1);
+                        horizontalGraph.AddUndirectedEdge (temp);
+                    } else if (source.min <= target.max && target.max <= source.max) {
+                        var temp =
+                            new Edge ("net" + terminalSections[i].net + target.net, terminalSections[i].net, target.net, 1);
                         horizontalGraph.AddUndirectedEdge (temp);
                     }
                 }
