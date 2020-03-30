@@ -9,10 +9,10 @@ using QuickGraph;
 using QuickGraph.Algorithms;
 
 namespace Yoshimura {
-    public class LeftEdgeAlgorithm {
+    public class Glitter {
         Graph verticalGraph;
         Graph horizontalGraph;
-        public LeftEdgeAlgorithm (IEnumerable<Terminal> upper, IEnumerable<Terminal> lower) {
+        public Glitter (IEnumerable<Terminal> upper, IEnumerable<Terminal> lower) {
             verticalGraph = new Graph ();
             horizontalGraph = new Graph ();
             CreateVerticalGraph (upper, lower);
@@ -145,76 +145,13 @@ namespace Yoshimura {
         }
     }
 
-    class Graph : AdjacencyGraph<string, Edge> {
-        public void AddUndirectedEdge (Edge edge) {
-            AddEdge (new Edge (edge.Name + "a", edge.Target, edge.Source, edge.Weight));
-            AddEdge (new Edge (edge.Name + "b", edge.Source, edge.Target, edge.Weight));
-
-        }
-    }
-    class Edge : IEdge<string> {
-        public Edge (string n, string s, string t, double w) {
-            Name = n;
-            Source = s;
-            Target = t;
-            Weight = w;
-        }
-
-        public string Name { get; set; }
-        public string Source { get; set; }
-        public string Target { get; set; }
-        public double Weight { get; set; }
-
-        // public override string ToString () {
-        //     return $"{Name},{Source},{Target},{Weight.ToString()}";
-        // }
+    public class WireWidth {
+        public string ul { get; set; }
+        public string net { get; set; }
+        public int xAxis { get; set; }
         public override string ToString () {
-            return $"{Source}->{Target}";
+            return $"{ul},{net},{xAxis.ToString()}";
         }
-    }
-
-   
-    }
-
-
-
-    static class Extension {
-        public static void WriteLine (this object obj, string text = "{0}") {
-            Console.WriteLine (text, obj);
-        }
-
-        public static void Write (this object obj, string text = "{0}") {
-            Console.Write (text, obj);
-        }
-
-        public static string ToString<T> (this IEnumerable<T> list, Func<T, string> toStr = null, string format = "{0},") {
-            //default
-            if (toStr == null) toStr = (t) => t.ToString ();
-            var sb = new StringBuilder ("[");
-            foreach (var str in list.Select (a => a.ToString ())) {
-                sb.AppendFormat (format, str);
-            }
-            sb.AppendLine ("]");
-            return sb.ToString ();
-        }
-
-        //from https://qiita.com/wipiano/items/4437e80dc99a30f303f0
-        public static IEnumerable<TItem> Distinct<TItem, TKey> (this IEnumerable<TItem> source, Func<TItem, TKey> keySelector) {
-            IEnumerable<TItem> Enumerate () {
-                var set = new HashSet<TKey> ();
-                foreach (var item in source)
-                    if (set.Add (keySelector (item))) yield return item;
-            }
-
-            if (source == null)
-                throw new ArgumentNullException (nameof (source));
-
-            if (keySelector == null)
-                throw new ArgumentNullException (nameof (keySelector));
-
-            return Enumerate ();
-        }
-
     }
 
 }
