@@ -43,7 +43,7 @@ namespace Yoshimura
             GetHCGRoot().ToString<string>().Write();
             AddBoundary(wires);
             Console.WriteLine("WCG");
-            weightedGraph.Edges.ToString<Edge>().Write();
+            weightedGraph.Edges.ToString<Edge>(format: "{0}\n", end: "", begin: "").Write();
             Environment.Exit(1);
 #if DEBUG
             "SweepIndex is".Write();

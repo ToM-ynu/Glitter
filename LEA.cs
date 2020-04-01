@@ -205,7 +205,7 @@ namespace Yoshimura
         // }
         public override string ToString()
         {
-            return $"{Source}-({Weight})->{Target}";
+            return $"{Source}->{Target} [label = {Weight}]";
         }
     }
 
@@ -226,16 +226,16 @@ static class Extension
         Console.Write(text, obj);
     }
 
-    public static string ToString<T>(this IEnumerable<T> list, Func<T, string> toStr = null, string format = "{0},")
+    public static string ToString<T>(this IEnumerable<T> list, Func<T, string> toStr = null, string format = "{0},", string begin = "[", string end = "]")
     {
         //default
         if (toStr == null) toStr = (t) => t.ToString();
-        var sb = new StringBuilder("[");
+        var sb = new StringBuilder(begin);
         foreach (var str in list.Select(a => a.ToString()))
         {
             sb.AppendFormat(format, str);
         }
-        sb.AppendLine("]");
+        sb.AppendLine(end);
         return sb.ToString();
     }
 
