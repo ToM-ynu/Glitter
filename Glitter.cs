@@ -19,6 +19,8 @@ namespace Yoshimura
     {
         Graph verticalGraph;
         Graph horizontalGraph;
+
+        Graph weightedGraph;
         public Glitter(IEnumerable<Terminal> upper, IEnumerable<Terminal> lower, Dictionary<string, int> wires)
         {
             verticalGraph = new Graph();
@@ -31,6 +33,17 @@ namespace Yoshimura
             verticalGraph.Edges.ToString<Edge>().Write();
             Console.WriteLine("HCG");
             horizontalGraph.Edges.ToString<Edge>().Write();
+
+            CreateWeightedGraph();
+            Console.WriteLine("WCG");
+            weightedGraph.Edges.ToString<Edge>().Write();
+            Console.Write("HCG Leaf");
+            GetHCGLeaf().ToString<string>().Write();
+            Console.Write("HCG Root");
+            GetHCGRoot().ToString<string>().Write();
+            AddBoundary(wires);
+            Console.WriteLine("WCG");
+            weightedGraph.Edges.ToString<Edge>().Write();
             Environment.Exit(1);
 #if DEBUG
             "SweepIndex is".Write();
@@ -168,6 +181,41 @@ namespace Yoshimura
             }
         }
 
+
+        private List<string> GetHCGRoot()
+        {
+            var result = new List<string>();
+            return weightedGraph.Vertices.Except<string>(verticalGraph.Edges.Select(a => a.Target)).ToList();
+        }
+        private List<string> GetHCGLeaf()
+        {
+            var result = new List<string>();
+            return weightedGraph.Vertices.Except<string>(verticalGraph.Edges.Select(a => a.Source)).ToList();
+        }
+        private void AddBoundary(Dictionary<string, int> wires)
+        {
+
+            var HCGRoot = GetHCGRoot();
+            var HCGLeaf = GetHCGLeaf();
+            weightedGraph.AddVertexRange(new string[] { "Top", "Bot" });
+            foreach (var item in HCGRoot)
+            {
+                var weight = Constant.minSpacing + wires[item] / 2;
+                var temp =
+                           new Edge($"netTop{item}", "Top", item, weight);
+                weightedGraph.AddEdge(temp);
+
+            }
+            foreach (var item in HCGLeaf)
+            {
+                var weight = Constant.minSpacing + wires[item] / 2;
+                var temp =
+                           new Edge($"net{item}Bot", item, "Bot", weight);
+                weightedGraph.AddEdge(temp);
+            }
+
+
+        }
         private bool IsStraightWire(string net, IEnumerable<Terminal> upper, IEnumerable<Terminal> lower)
         {
             return upper.First(a => a.net == net).xAxis == lower.First(a => a.net == net).xAxis;
@@ -180,6 +228,14 @@ namespace Yoshimura
                 item.Key.Write();
                 (":" + item.Value.ToString<string>()).Write();
             }
+        }
+
+        private void CreateWeightedGraph()
+        {
+            if (horizontalGraph == null || verticalGraph == null) throw new Exception("Create HCG/VGC first.");
+            weightedGraph = new Graph();
+            weightedGraph.AddVertexRange(horizontalGraph.Vertices.Concat(verticalGraph.Vertices));
+            weightedGraph.AddEdgeRange(horizontalGraph.Edges.Concat(verticalGraph.Edges));
         }
     }
 
