@@ -20,6 +20,7 @@ namespace Yoshimura
         Graph verticalGraph;
         Graph horizontalGraph;
 
+///Directed graph とUndirected graphは別のグラフに持ったほうが良さそう
         Graph weightedGraph;
         public Glitter(IEnumerable<Terminal> upper, IEnumerable<Terminal> lower, Dictionary<string, int> wires)
         {
@@ -179,6 +180,19 @@ namespace Yoshimura
                     }
                 }
             }
+        }
+        ///Longest path from Top to vertex
+        private double CreateAnsestorWeight(string vertex)
+        {
+
+            throw new NotImplementedException();
+
+        }
+
+        ///Longest path vetex to Bottom
+        private double CreateDeansestorWeight(string vertex)
+        {
+            throw new NotImplementedException();
         }
 
 
