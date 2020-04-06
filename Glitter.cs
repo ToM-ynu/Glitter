@@ -7,6 +7,8 @@ using System.Text;
 using CsvHelper;
 using QuickGraph;
 using QuickGraph.Algorithms;
+using QuickGraph.Algorithms.Observers;
+using QuickGraph.Algorithms.ShortestPath;
 
 namespace Yoshimura
 {
@@ -20,8 +22,9 @@ namespace Yoshimura
         Graph verticalGraph;
         Graph horizontalGraph;
 
-///Directed graph とUndirected graphは別のグラフに持ったほうが良さそう
-        Graph weightedGraph;
+        ///Directed graph とUndirected graphは別のグラフに持ったほうが良さそう
+        Graph weightedDirectedGraph;
+        Graph weightedUndirectedGraph;
         public Glitter(IEnumerable<Terminal> upper, IEnumerable<Terminal> lower, Dictionary<string, int> wires)
         {
             verticalGraph = new Graph();
@@ -35,16 +38,21 @@ namespace Yoshimura
             Console.WriteLine("HCG");
             horizontalGraph.Edges.ToString<Edge>().Write();
 
-            CreateWeightedGraph();
-            Console.WriteLine("WCG");
-            weightedGraph.Edges.ToString<Edge>().Write();
+            CreateWeightedGraphs();
+
             Console.Write("HCG Leaf");
             GetHCGLeaf().ToString<string>().Write();
             Console.Write("HCG Root");
             GetHCGRoot().ToString<string>().Write();
             AddBoundary(wires);
             Console.WriteLine("WCG");
-            weightedGraph.Edges.ToString<Edge>(format: "{0}\n", end: "", begin: "").Write();
+            weightedDirectedGraph.Edges.ToString<Edge>(format: "{0}\n", end: "", begin: "").Write();
+            weightedUndirectedGraph.Edges.ToString<Edge>(format: "{0}\n", end: "", begin: "").Write();
+            Console.WriteLine("ANCW");
+            CreateAnsestorWeights().ToString<string, double>().WriteLine();
+            Console.WriteLine("DECW");
+            CreateDeansestorWeights().ToString<string, double>().WriteLine();
+
             Environment.Exit(1);
 #if DEBUG
             "SweepIndex is".Write();
@@ -182,42 +190,74 @@ namespace Yoshimura
             }
         }
         ///Longest path from Top to vertex
-        private double CreateAnsestorWeight(string vertex)
+        private Dictionary<string, double> CreateAnsestorWeights()
         {
-
-            throw new NotImplementedException();
-
+            var tempGraph = new Graph();
+            var resultDictionary = new Dictionary<string, double>();
+            //Create negative weighted directed graph
+            tempGraph.AddVertexRange(weightedDirectedGraph.Vertices);
+            tempGraph.AddEdgeRange(weightedDirectedGraph.Edges.Select(x => new Edge(x.Name, x.Source, x.Target, -x.Weight)));
+            //Solve shortest path of Top -> vertex
+            var algo = new BellmanFordShortestPathAlgorithm<string, Edge>(tempGraph, e => e.Weight);
+            var pred = new VertexPredecessorRecorderObserver<string, Edge>();
+            pred.Attach(algo);
+            foreach (var vertex in tempGraph.Vertices.Where(a => a != "Top" && a != "Bot"))
+            {
+                algo.Compute("Top");
+                IEnumerable<Edge> path;
+                pred.TryGetPath(vertex, out path);
+                if (path != null)
+                    resultDictionary[vertex] = -path.Sum(a => a.Weight);
+            }
+            return resultDictionary;
         }
 
         ///Longest path vetex to Bottom
-        private double CreateDeansestorWeight(string vertex)
+        private Dictionary<string, double> CreateDeansestorWeights()
         {
-            throw new NotImplementedException();
+            var tempGraph = new Graph();
+            var resultDictionary = new Dictionary<string, double>();
+            //Create negative weighted directed graph
+            tempGraph.AddVertexRange(weightedDirectedGraph.Vertices);
+            tempGraph.AddEdgeRange(weightedDirectedGraph.Edges.Select(x => new Edge(x.Name, x.Source, x.Target, -x.Weight)));
+            //Solve shortest path of vetex -> Top
+            var algo = new BellmanFordShortestPathAlgorithm<string, Edge>(tempGraph, e => e.Weight);
+            var pred = new VertexPredecessorRecorderObserver<string, Edge>();
+            pred.Attach(algo);
+            foreach (var vertex in tempGraph.Vertices.Where(a => a != "Top" && a != "Bot"))
+            {
+                algo.Compute(vertex);
+                IEnumerable<Edge> path;
+                pred.TryGetPath("Bot", out path);
+                if (path != null)
+                    resultDictionary[vertex] = -path.Sum(a => a.Weight);
+            }
+            return resultDictionary;
         }
 
 
         private List<string> GetHCGRoot()
         {
             var result = new List<string>();
-            return weightedGraph.Vertices.Except<string>(verticalGraph.Edges.Select(a => a.Target)).ToList();
+            return weightedDirectedGraph.Vertices.Except<string>(verticalGraph.Edges.Select(a => a.Target)).ToList();
         }
         private List<string> GetHCGLeaf()
         {
             var result = new List<string>();
-            return weightedGraph.Vertices.Except<string>(verticalGraph.Edges.Select(a => a.Source)).ToList();
+            return weightedDirectedGraph.Vertices.Except<string>(verticalGraph.Edges.Select(a => a.Source)).ToList();
         }
         private void AddBoundary(Dictionary<string, int> wires)
         {
 
             var HCGRoot = GetHCGRoot();
             var HCGLeaf = GetHCGLeaf();
-            weightedGraph.AddVertexRange(new string[] { "Top", "Bot" });
+            weightedDirectedGraph.AddVertexRange(new string[] { "Top", "Bot" });
             foreach (var item in HCGRoot)
             {
                 var weight = Constant.minSpacing + wires[item] / 2;
                 var temp =
                            new Edge($"netTop{item}", "Top", item, weight);
-                weightedGraph.AddEdge(temp);
+                weightedDirectedGraph.AddEdge(temp);
 
             }
             foreach (var item in HCGLeaf)
@@ -225,7 +265,7 @@ namespace Yoshimura
                 var weight = Constant.minSpacing + wires[item] / 2;
                 var temp =
                            new Edge($"net{item}Bot", item, "Bot", weight);
-                weightedGraph.AddEdge(temp);
+                weightedDirectedGraph.AddEdge(temp);
             }
 
 
@@ -244,12 +284,16 @@ namespace Yoshimura
             }
         }
 
-        private void CreateWeightedGraph()
+        private void CreateWeightedGraphs()
         {
             if (horizontalGraph == null || verticalGraph == null) throw new Exception("Create HCG/VGC first.");
-            weightedGraph = new Graph();
-            weightedGraph.AddVertexRange(horizontalGraph.Vertices.Concat(verticalGraph.Vertices));
-            weightedGraph.AddEdgeRange(horizontalGraph.Edges.Concat(verticalGraph.Edges));
+            weightedDirectedGraph = new Graph();
+            weightedUndirectedGraph = new Graph();
+            weightedDirectedGraph.AddVertexRange(verticalGraph.Vertices);
+            weightedDirectedGraph.AddEdgeRange(verticalGraph.Edges);
+
+            weightedUndirectedGraph.AddVertexRange(horizontalGraph.Vertices);
+            weightedUndirectedGraph.AddEdgeRange(horizontalGraph.Edges);
         }
     }
 

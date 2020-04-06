@@ -239,6 +239,19 @@ static class Extension
         return sb.ToString();
     }
 
+    public static string ToString<TKey, TValue>(this Dictionary<TKey, TValue> dir, Func<TKey, string> toStr = null, string format = "{0},", string begin = "[", string end = "]")
+    {
+        //default
+        if (toStr == null) toStr = (t) => t.ToString();
+        var sb = new StringBuilder(begin);
+        foreach (var str in dir.Select(a => a.ToString()))
+        {
+            sb.AppendFormat(format, str);
+        }
+        sb.AppendLine(end);
+        return sb.ToString();
+    }
+
     //from https://qiita.com/wipiano/items/4437e80dc99a30f303f0
     public static IEnumerable<TItem> Distinct<TItem, TKey>(this IEnumerable<TItem> source, Func<TItem, TKey> keySelector)
     {
