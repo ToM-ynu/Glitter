@@ -25,12 +25,14 @@ namespace Yoshimura
         ///Directed graph とUndirected graphは別のグラフに持ったほうが良さそう
         Graph weightedDirectedGraph;
         Graph weightedUndirectedGraph;
+        Dictionary<string, int> wires;
         public Glitter(IEnumerable<Terminal> upper, IEnumerable<Terminal> lower, Dictionary<string, int> wires)
         {
             verticalGraph = new Graph();
             horizontalGraph = new Graph();
+            this.wires = wires;
             CreateVerticalGraph(upper, lower);
-            CreateHorizontalGraph(upper, lower, wires);
+            CreateHorizontalGraph(upper, lower);
             var sweepIndex = upper.Concat(lower).OrderBy(b => b.xAxis).Distinct(a => a.net).Select(c => c.net).ToList();
             "Creating Graph is done.".WriteLine();
             Console.WriteLine("VCG");
@@ -38,6 +40,8 @@ namespace Yoshimura
             Console.WriteLine("HCG");
             horizontalGraph.Edges.ToString<Edge>().Write();
 
+            Console.WriteLine("MAX density");
+            Console.WriteLine(MaximumDensity(upper, lower));
             CreateWeightedGraphs();
 
             Console.Write("HCG Leaf");
@@ -155,7 +159,7 @@ namespace Yoshimura
 
             }
         }
-        private void CreateHorizontalGraph(IEnumerable<Terminal> upper, IEnumerable<Terminal> lower, Dictionary<string, int> wires)
+        private void CreateHorizontalGraph(IEnumerable<Terminal> upper, IEnumerable<Terminal> lower)
         {
             var nets = new HashSet<string>(upper.Select(a => a.net).Concat(lower.Select(b => b.net)));
             horizontalGraph.AddVertexRange(nets);
