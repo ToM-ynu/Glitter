@@ -234,6 +234,50 @@ namespace Yoshimura
             }
             return resultDictionary;
         }
+        private double MinSeparation(string i, string j)
+        {
+            return Constant.minSpacing + wires[i] / 2 + wires[j] / 2;
+        }
+
+        private double CalcLabel(string i, string j, Dictionary<string, double> ancw, Dictionary<string, double> decw)
+        {
+            ///論文にはサイクルができないようにするって書いてあるけど、無向グラフがあったらどうやってもサイクルできちゃうので、
+            ///(VCG+すでに向きを割り当てたEdgeで、)サイクルができないようにするってことでいいのか？？？？多分そう。
+            var tempGraph = new Graph();
+            tempGraph.AddVertexRange(weightedDirectedGraph.Vertices);
+            tempGraph.AddEdgeRange(weightedDirectedGraph.Edges);
+            var guid = Guid.NewGuid();
+            var EdgeIJ = weightedUndirectedGraph.Edges.Where(a => a.Target == i && a.Source == j).First();
+            //i->jが行けるか試す。
+            var edge = new Edge(guid.ToString(), i, j, EdgeIJ.Weight);
+            tempGraph.AddEdge(edge);
+            try
+            {
+                var hoge = tempGraph.TopologicalSort();
+            }
+            catch (NonAcyclicGraphException)
+            {
+                return double.PositiveInfinity;
+            }
+            tempGraph.RemoveEdge(edge);
+            //j->iが行けるか試す。
+            edge = new Edge(guid.ToString(), j, i, EdgeIJ.Weight);
+            tempGraph.AddEdge(edge);
+            try
+            {
+                var hoge = tempGraph.TopologicalSort();
+            }
+            catch (NonAcyclicGraphException)
+            {
+                return double.PositiveInfinity;
+            }
+            tempGraph.RemoveEdge(edge);
+            //どっちもできるので、実数を投げる。
+            var left = ancw[i] + decw[j] + MinSeparation(i, j);
+            var right = ancw[j] + decw[i] + MinSeparation(i, j);
+
+            return Math.Max(left, right);
+        }
 
 
         private List<string> GetHCGRoot()
