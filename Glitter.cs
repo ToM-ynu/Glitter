@@ -295,6 +295,47 @@ namespace Yoshimura
             weightedUndirectedGraph.AddVertexRange(horizontalGraph.Vertices);
             weightedUndirectedGraph.AddEdgeRange(horizontalGraph.Edges);
         }
+
+        private double MaximumDensity(IEnumerable<Terminal> upper, IEnumerable<Terminal> lower)
+        {
+            const double boundaryClearance = 3;
+            const double VerticalWireWidth = 10;
+            var temp = upper.Concat(lower);
+            var youso = new HashSet<string>(temp.Select(a => a.net));
+            var IMOS = new Dictionary<double, double>();
+            foreach (var net in youso)
+            {
+                var foo = temp.Where(a => a.net == net);
+                var min = foo.Min(a => a.xAxis) - VerticalWireWidth / 2;
+                var max = foo.Max(a => a.xAxis) + VerticalWireWidth / 2;
+                if (IMOS.ContainsKey(min))
+                {
+                    IMOS[min] += wires[net];
+                }
+                else
+                {
+                    IMOS[min] = wires[net];
+                }
+
+                if (IMOS.ContainsKey(max))
+                {
+                    IMOS[max] += -wires[net];
+                }
+                else
+                {
+                    IMOS[max] = -wires[net];
+                }
+            }
+            var sum = 0.0;
+            var current = 0.0;
+            foreach (var item in IMOS)
+            {
+                current += item.Value;
+                sum = Math.Max(sum, current);
+            }
+
+            return boundaryClearance * 2 + sum;
+        }
     }
 
     public class WireWidth
