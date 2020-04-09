@@ -57,6 +57,17 @@ namespace Yoshimura
             Console.WriteLine("DECW");
             CreateDeansestorWeights().ToString<string, double>().WriteLine();
 
+            var foo = weightedUndirectedGraph.Edges.Select(a => (a.Source, a.Target)).ToList();
+            foreach (var item in foo)
+            {
+                Console.WriteLine(CalcLabel(item.Source, item.Target, CreateAnsestorWeights(), CreateDeansestorWeights()));
+            }
+            foreach (var item in horizontalGraph.Vertices)
+            {
+
+
+            }
+
             Environment.Exit(1);
 #if DEBUG
             "SweepIndex is".Write();
@@ -113,16 +124,7 @@ namespace Yoshimura
         {
             return horizontalGraph.Edges.Where(a => a.Source == source).Select(a => a.Target).Intersect(target).Count() != 0;
         }
-        private List<string> HorizontalAdjacentVertexList(string source)
-        {
-            var set = new HashSet<string>();
-            foreach (var item in horizontalGraph.Edges.Where(a => a.Source == source || a.Target == source))
-            {
-                set.Add(item.Source);
-                set.Add(item.Target);
-            }
-            return set.ToList();
-        }
+
 
         private void CreateVerticalGraph(IEnumerable<Terminal> upper, IEnumerable<Terminal> lower)
         {
@@ -247,17 +249,19 @@ namespace Yoshimura
             return Constant.minSpacing + wires[i] / 2 + wires[j] / 2;
         }
 
-        private double CalcLabel(string i, string j, Dictionary<string, double> ancw, Dictionary<string, double> decw)
+        private (double, string, string) CalcLabel(string Sourse, string Target, Dictionary<string, double> ancw, Dictionary<string, double> decw)
         {
             ///論文にはサイクルができないようにするって書いてあるけど、無向グラフがあったらどうやってもサイクルできちゃうので、
             ///(VCG+すでに向きを割り当てたEdgeで、)サイクルができないようにするってことでいいのか？？？？多分そう。
+
+            //VCGとHCGの両方で辺がはられている場合は、VCGの向きで有効辺をはり、重さはHCGから取る。
             var tempGraph = new Graph();
             tempGraph.AddVertexRange(weightedDirectedGraph.Vertices);
             tempGraph.AddEdgeRange(weightedDirectedGraph.Edges);
             var guid = Guid.NewGuid();
-            var EdgeIJ = weightedUndirectedGraph.Edges.Where(a => a.Target == i && a.Source == j).First();
+            var EdgeIJ = weightedUndirectedGraph.Edges.Where(a => a.Target == Target && a.Source == Sourse).First();
             //i->jが行けるか試す。
-            var edge = new Edge(guid.ToString(), i, j, EdgeIJ.Weight);
+            var edge = new Edge(guid.ToString(), Sourse, Target, EdgeIJ.Weight);
             tempGraph.AddEdge(edge);
             try
             {
@@ -265,11 +269,11 @@ namespace Yoshimura
             }
             catch (NonAcyclicGraphException)
             {
-                return double.PositiveInfinity;
+                return (double.PositiveInfinity, Target, Sourse);
             }
             tempGraph.RemoveEdge(edge);
             //j->iが行けるか試す。
-            edge = new Edge(guid.ToString(), j, i, EdgeIJ.Weight);
+            edge = new Edge(guid.ToString(), Target, Sourse, EdgeIJ.Weight);
             tempGraph.AddEdge(edge);
             try
             {
@@ -277,14 +281,26 @@ namespace Yoshimura
             }
             catch (NonAcyclicGraphException)
             {
-                return double.PositiveInfinity;
+                return (double.PositiveInfinity, Sourse, Target);
             }
             tempGraph.RemoveEdge(edge);
             //どっちもできるので、実数を投げる。
-            var left = ancw[i] + decw[j] + MinSeparation(i, j);
-            var right = ancw[j] + decw[i] + MinSeparation(i, j);
+            var left = ancw[Sourse] + decw[Target] + MinSeparation(Sourse, Target);
+            var right = ancw[Target] + decw[Sourse] + MinSeparation(Sourse, Target);
+            //論文にはleft==rightのときが定義されてないのだけど、多分これはどっちもいいという意味だと思う
+            if (left == right)
+            {
+                return (Math.Max(left, right), "-1", "-1");
 
-            return Math.Max(left, right);
+            }
+            else if (left > right)
+            {
+                return (Math.Max(left, right), Sourse, Target);
+            }
+            else
+            {
+                return (Math.Max(left, right), Target, Sourse);
+            }
         }
 
 
