@@ -41,7 +41,8 @@ namespace Yoshimura
             horizontalGraph.Edges.ToString<Edge>().Write();
 
             Console.WriteLine("MAX density");
-            Console.WriteLine(MaximumDensity(upper, lower));
+            var maxDensity = MaximumDensity(upper, lower);
+            Console.WriteLine(maxDensity);
             CreateWeightedGraphs();
 
             Console.Write("HCG Leaf");
@@ -49,24 +50,33 @@ namespace Yoshimura
             Console.Write("HCG Root");
             GetHCGRoot().ToString<string>().Write();
             AddBoundary(wires);
-            Console.WriteLine("WCG");
+            Console.WriteLine("Init WCG");
             weightedDirectedGraph.Edges.ToString<Edge>(format: "{0}\n", end: "", begin: "").Write();
             weightedUndirectedGraph.Edges.ToString<Edge>(format: "{0}\n", end: "", begin: "").Write();
-            Console.WriteLine("ANCW");
-            CreateAnsestorWeights().ToString<string, double>().WriteLine();
-            Console.WriteLine("DECW");
-            CreateDeansestorWeights().ToString<string, double>().WriteLine();
 
-            var foo = weightedUndirectedGraph.Edges.Select(a => (a.Source, a.Target)).ToList();
-            foreach (var item in foo)
+            int count = 0;
+            while (true)
             {
-                Console.WriteLine(CalcLabel(item.Source, item.Target, CreateAnsestorWeights(), CreateDeansestorWeights()));
+                Console.Write("ANCW\t");
+                var ancw = CreateAnsestorWeights();
+                ancw.ToString<string, double>().Write();
+                Console.Write("DECW\t");
+                var decw = CreateDeansestorWeights();
+                decw.ToString<string, double>().Write();
+                var LabelList = weightedUndirectedGraph.Edges.
+                Select(a => (a, CalcLabel(a.Source, a.Target, ancw, decw))).
+                OrderByDescending(a => a.Item2.Item1).ToList();
+                Console.Write("Labels\t");
+                LabelList.Select(a => a.Item2).ToString<(double, string, string)>().Write();
+                if (LabelList.Count == 0 || LabelList.First().Item2.Item1 < maxDensity) break;
+                AddEdgeWeightedDirectedGraph(LabelList.First().Item1, LabelList.First().Item2);
+                Console.WriteLine(count);
+                weightedDirectedGraph.Edges.ToString<Edge>(format: "{0}\n", end: "", begin: "").Write();
+                weightedUndirectedGraph.Edges.ToString<Edge>(format: "{0}\n", end: "", begin: "").Write();
+                if (count++ > 10) break;
             }
-            foreach (var item in horizontalGraph.Vertices)
-            {
-
-
-            }
+            weightedDirectedGraph.Edges.ToString<Edge>(format: "{0}\n", end: "", begin: "").Write();
+            weightedUndirectedGraph.Edges.ToString<Edge>(format: "{0}\n", end: "", begin: "").Write();
 
             Environment.Exit(1);
 #if DEBUG
@@ -287,7 +297,7 @@ namespace Yoshimura
             //どっちもできるので、実数を投げる。
             var left = ancw[Sourse] + decw[Target] + MinSeparation(Sourse, Target);
             var right = ancw[Target] + decw[Sourse] + MinSeparation(Sourse, Target);
-            //論文にはleft==rightのときが定義されてないのだけど、多分これはどっちもいいという意味だと思う
+            //left==rightのときは、枝刈り終了を意味するはず
             if (left == right)
             {
                 return (Math.Max(left, right), "-1", "-1");
@@ -303,6 +313,22 @@ namespace Yoshimura
             }
         }
 
+        private void AddEdgeWeightedDirectedGraph(Edge removeEdge, (double Label, string Source, string Target) addedge)//いい名前がない
+        {
+            weightedUndirectedGraph.RemoveEdge(removeEdge);
+            Edge edge;
+            weightedDirectedGraph.TryGetEdge(addedge.Source, addedge.Target, out edge);
+            if (edge == null)//this is new edge
+            {
+                edge = new Edge($"net{addedge.Source}{addedge.Target}", addedge.Source, addedge.Target, removeEdge.Weight);
+            }
+            else
+            {
+                weightedDirectedGraph.RemoveEdge(edge);
+                edge.Weight = Math.Max(edge.Weight, removeEdge.Weight);
+            }
+            weightedDirectedGraph.AddEdge(edge);
+        }
 
         private List<string> GetHCGRoot()
         {
