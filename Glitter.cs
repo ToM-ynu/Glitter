@@ -178,20 +178,24 @@ namespace Yoshimura
                 {
                     var target = terminalSections[j];
                     var weight = Constant.minSpacing + wires[source.net] / 2 + wires[target.net] / 2;
-                    if (source.min <= target.min && target.min <= source.max)
+                    if (IsInside((target.min, target.max), (source.min, source.max)))
                     {
                         var temp =
                             new Edge("net" + source.net + target.net, source.net, target.net, weight);
-                        horizontalGraph.AddUndirectedEdge(temp);
-                    }
-                    else if (source.min <= target.max && target.max <= source.max)
-                    {
-                        var temp =
-                            new Edge("net" + source.net + target.net, source.net, target.net, weight);
-                        horizontalGraph.AddUndirectedEdge(temp);
+                        horizontalGraph.AddEdge(temp);
                     }
                 }
             }
+        }
+
+        private static bool IsInside<T>((T min, T max) a, (T min, T max) b) where T : IComparable<T>
+        {
+            var flag = false;
+            flag |= (a.min.CompareTo(b.min) <= 0 && a.max.CompareTo(b.min) >= 0);
+            flag |= (a.min.CompareTo(b.max) <= 0 && a.max.CompareTo(b.max) >= 0);
+            flag |= (b.min.CompareTo(a.min) <= 0 && b.max.CompareTo(a.min) >= 0);
+            flag |= (b.min.CompareTo(a.max) <= 0 && b.max.CompareTo(a.max) >= 0);
+            return flag;
         }
         ///Longest path from Top to vertex
         private Dictionary<string, double> CreateAnsestorWeights()
