@@ -6,7 +6,7 @@ namespace Yoshimura
     {
         static void Main(string[] args)
         {
-            var channel = new Channel("channel.csv","wireWidth.csv");
+            var channel = new Channel("channel2.csv","wireWidth.csv");
         }
 
     }

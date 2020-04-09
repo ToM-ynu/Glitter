@@ -46,8 +46,8 @@ namespace Yoshimura
             {
                 csv.Configuration.HasHeaderRecord = false; // When csv has no index row.
                 var result = csv.GetRecords<CSVStruct>().ToList();
-                upperSide = result.Where(a => a.ul == "u").Select(b => new Terminal(b));
-                lowerSide = result.Where(a => a.ul == "l").Select(b => new Terminal(b));
+                upperSide = result.Where(a => a.ul == "u").Select(b => new Terminal(b)).OrderBy(c => c.xAxis);
+                lowerSide = result.Where(a => a.ul == "l").Select(b => new Terminal(b)).OrderBy(c => c.xAxis);
 
             }
             using (var srWireWidthCSVPath = new StreamReader(wireWidthCSVPath))
