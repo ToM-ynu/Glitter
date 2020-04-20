@@ -18,43 +18,67 @@ namespace Glitter
         Graph weightedDirectedGraph;
         Graph weightedUndirectedGraph;
         Dictionary<string, int> wires;
-        internal double maxDensity { get;set; }
-        WeightedGraphSelection(Graph weightedDirectedGraph, Graph weightedUndirectedGraph,double maxDensity)
+        internal double maxDensity { get; set; }
+        WeightedGraphSelection(Graph weightedDirectedGraph, Graph weightedUndirectedGraph, double maxDensity)
         {
             this.weightedDirectedGraph = weightedDirectedGraph;
             this.weightedUndirectedGraph = weightedUndirectedGraph;
             this.maxDensity = maxDensity;
+            Selection();
         }
 
-        private void NodeSelection()
+        private void Selection()
         {
-            var count = 0;
-            while (count != 10)
+            while (true)
             {
-                Console.Write("ANCW\t");
-                var ancw = CreateChainWeight.Ancestor(weightedDirectedGraph);
-                ancw.ToString<string, double>().Write();
-                Console.Write("DECW\t");
-                var decw = CreateChainWeight.Deanestor(weightedDirectedGraph);
-                decw.ToString<string, double>().Write();
-                var LabelList = weightedUndirectedGraph.Edges.
-                Select(a => (a, CalcLabel(a.Source, a.Target, ancw, decw))).
-                OrderByDescending(a => a.Item2.Item1).ToList();
-                Console.Write("Labels\t");
-                LabelList.Select(a => a.Item2).ToString<(double, string, string)>().Write();
-                if (LabelList.Count == 0 || LabelList.First().Item2.Item1 < maxDensity) break;
-                AddEdgeWeightedDirectedGraph(LabelList.First().Item1, LabelList.First().Item2);
-                Console.WriteLine(count);
-                weightedDirectedGraph.Edges.ToString<Edge>(format: "{0}\n", end: "", begin: "").Write();
-                weightedUndirectedGraph.Edges.ToString<Edge>(format: "{0}\n", end: "", begin: "").Write();
-                count++;
+                var node = NodeSelection();
+                var edge = EdgeSelection();
+                if (node == edge == true) break;
             }
 
         }
 
-        void EdgeSelection()
-        {
 
+        //false で帰ってきたらNodeSelectionがいる。
+        //trueで帰ってきたら、Unprocessed nodeがないので終了。
+        private bool NodeSelection()
+        {
+            int count = 0;
+            while (count++ < 1000)
+            {
+                var ancw = CreateChainWeight.Ancestor(weightedDirectedGraph);
+                var decw = CreateChainWeight.Deanestor(weightedDirectedGraph);
+                var LabelList = weightedUndirectedGraph.Edges.
+                Select(a => (a, CalcLabel(a.Source, a.Target, ancw, decw))).
+                OrderByDescending(a => a.Item2.Item1).ToList();
+                //wire の割当が終了
+                if (LabelList.Count == 0)
+                    return true;
+
+                //Goto NodeSelection
+                if (LabelList.First().Item2.Item1 <= maxDensity)
+                    return false;
+                if (LabelList.Select(a => a.Item2.Item1).Contains((double)-1))
+                    return false;
+                AddEdgeWeightedDirectedGraph(LabelList.First().Item1, LabelList.First().Item2);
+#if DEBUG
+                Console.Write("Labels\t");
+                LabelList.Select(a => a.Item2).ToString<(double, string, string)>().Write();
+                Console.Write("ANCW\t");
+                ancw.ToString<string, double>().Write();
+                Console.Write("DECW\t");
+                decw.ToString<string, double>().Write();
+                weightedDirectedGraph.Edges.ToString<Edge>(format: "{0}\n", end: "", begin: "").Write();
+                weightedUndirectedGraph.Edges.ToString<Edge>(format: "{0}\n", end: "", begin: "").Write();
+#endif
+            }
+            throw new Exception($"Beyond safety loop count {count}. If this value is not enough. Please change this limit");
+
+        }
+
+        bool EdgeSelection()
+        {
+            throw new NotImplementedException();
         }
 
 
@@ -64,6 +88,7 @@ namespace Glitter
             ///(VCG+すでに向きを割り当てたEdgeで、)サイクルができないようにするってことでいいのか？？？？多分そう。
 
             //VCGとHCGの両方で辺がはられている場合は、VCGの向きで有効辺をはり、重さはHCGから取る。
+            //DAGを維持するためには、トポロジカルソートができなかったらその逆向きに貼れば良い
             var tempGraph = new Graph();
             tempGraph.AddVertexRange(weightedDirectedGraph.Vertices);
             tempGraph.AddEdgeRange(weightedDirectedGraph.Edges);
@@ -100,7 +125,7 @@ namespace Glitter
             if (left == right)
             {
                 return (Math.Max(left, right), "-1", "-1");
-
+                //Node Selection行き
             }
             else if (left > right)
             {
@@ -135,6 +160,6 @@ namespace Glitter
             return Constant.minSpacing + wires[i] / 2 + wires[j] / 2;
         }
 
-        
+
     }
 }
