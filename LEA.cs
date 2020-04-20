@@ -8,7 +8,7 @@ using CsvHelper;
 using QuickGraph;
 using QuickGraph.Algorithms;
 
-namespace Yoshimura
+namespace Glitter
 {
     public class LeftEdgeAlgorithm
     {

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Yoshimura
+namespace Glitter
 {
     class Program
     {
