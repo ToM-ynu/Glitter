@@ -58,10 +58,10 @@ namespace Yoshimura
             while (true)
             {
                 Console.Write("ANCW\t");
-                var ancw = CreateAnsestorWeights();
+                var ancw = CreateAncestorWeights();
                 ancw.ToString<string, double>().Write();
                 Console.Write("DECW\t");
-                var decw = CreateDeansestorWeights();
+                var decw = CreateDeanestorWeights();
                 decw.ToString<string, double>().Write();
                 var LabelList = weightedUndirectedGraph.Edges.
                 Select(a => (a, CalcLabel(a.Source, a.Target, ancw, decw))).
@@ -159,7 +159,7 @@ namespace Yoshimura
             //try-catch is very slow.
             try
             {
-                var hoge = verticalGraph.TopologicalSort();
+                verticalGraph.TopologicalSort();
             }
             catch (NonAcyclicGraphException)
             {
@@ -179,9 +179,9 @@ namespace Yoshimura
             foreach (var net in nets)
             {
                 var terminalPositions = upper.Concat(lower).Where(a => a.net == net).Select(a => a.xAxis);
-                var hoge = (net, terminalPositions.Min(), terminalPositions.Max());
-                if (hoge.Item2 != hoge.Item3)
-                    terminalSections.Add(hoge);
+                var temp = (net, terminalPositions.Min(), terminalPositions.Max());
+                if (temp.Item2 != temp.Item3)
+                    terminalSections.Add(temp);
             }
             for (var i = 0; i < terminalSections.Count; i++)
             {
@@ -210,7 +210,7 @@ namespace Yoshimura
             return flag;
         }
         ///Longest path from Top to vertex
-        private Dictionary<string, double> CreateAnsestorWeights()
+        private Dictionary<string, double> CreateAncestorWeights()
         {
             var tempGraph = new Graph();
             var resultDictionary = new Dictionary<string, double>();
@@ -218,12 +218,12 @@ namespace Yoshimura
             tempGraph.AddVertexRange(weightedDirectedGraph.Vertices);
             tempGraph.AddEdgeRange(weightedDirectedGraph.Edges.Select(x => new Edge(x.Name, x.Source, x.Target, -x.Weight)));
             //Solve shortest path of Top -> vertex
-            var algo = new BellmanFordShortestPathAlgorithm<string, Edge>(tempGraph, e => e.Weight);
+            var algorithm = new BellmanFordShortestPathAlgorithm<string, Edge>(tempGraph, e => e.Weight);
             var pred = new VertexPredecessorRecorderObserver<string, Edge>();
-            pred.Attach(algo);
+            pred.Attach(algorithm);
             foreach (var vertex in tempGraph.Vertices.Where(a => a != "Top" && a != "Bot"))
             {
-                algo.Compute("Top");
+                algorithm.Compute("Top");
                 IEnumerable<Edge> path;
                 pred.TryGetPath(vertex, out path);
                 if (path != null)
@@ -232,21 +232,21 @@ namespace Yoshimura
             return resultDictionary;
         }
 
-        ///Longest path vetex to Bottom
-        private Dictionary<string, double> CreateDeansestorWeights()
+        ///Longest path vertex to Bottom
+        private Dictionary<string, double> CreateDeanestorWeights()
         {
             var tempGraph = new Graph();
             var resultDictionary = new Dictionary<string, double>();
             //Create negative weighted directed graph
             tempGraph.AddVertexRange(weightedDirectedGraph.Vertices);
             tempGraph.AddEdgeRange(weightedDirectedGraph.Edges.Select(x => new Edge(x.Name, x.Source, x.Target, -x.Weight)));
-            //Solve shortest path of vetex -> Top
-            var algo = new BellmanFordShortestPathAlgorithm<string, Edge>(tempGraph, e => e.Weight);
+            //Solve shortest path of vertex -> Top
+            var algorithm = new BellmanFordShortestPathAlgorithm<string, Edge>(tempGraph, e => e.Weight);
             var pred = new VertexPredecessorRecorderObserver<string, Edge>();
-            pred.Attach(algo);
+            pred.Attach(algorithm);
             foreach (var vertex in tempGraph.Vertices.Where(a => a != "Top" && a != "Bot"))
             {
-                algo.Compute(vertex);
+                algorithm.Compute(vertex);
                 IEnumerable<Edge> path;
                 pred.TryGetPath("Bot", out path);
                 if (path != null)
@@ -259,7 +259,7 @@ namespace Yoshimura
             return Constant.minSpacing + wires[i] / 2 + wires[j] / 2;
         }
 
-        private (double, string, string) CalcLabel(string Sourse, string Target, Dictionary<string, double> ancw, Dictionary<string, double> decw)
+        private (double, string, string) CalcLabel(string Source, string Target, Dictionary<string, double> ancw, Dictionary<string, double> decw)
         {
             ///論文にはサイクルができないようにするって書いてあるけど、無向グラフがあったらどうやってもサイクルできちゃうので、
             ///(VCG+すでに向きを割り当てたEdgeで、)サイクルができないようにするってことでいいのか？？？？多分そう。
@@ -269,34 +269,34 @@ namespace Yoshimura
             tempGraph.AddVertexRange(weightedDirectedGraph.Vertices);
             tempGraph.AddEdgeRange(weightedDirectedGraph.Edges);
             var guid = Guid.NewGuid();
-            var EdgeIJ = weightedUndirectedGraph.Edges.Where(a => a.Target == Target && a.Source == Sourse).First();
+            var EdgeIJ = weightedUndirectedGraph.Edges.Where(a => a.Target == Target && a.Source == Source).First();
             //i->jが行けるか試す。
-            var edge = new Edge(guid.ToString(), Sourse, Target, EdgeIJ.Weight);
+            var edge = new Edge(guid.ToString(), Source, Target, EdgeIJ.Weight);
             tempGraph.AddEdge(edge);
             try
             {
-                var hoge = tempGraph.TopologicalSort();
+                tempGraph.TopologicalSort();
             }
             catch (NonAcyclicGraphException)
             {
-                return (double.PositiveInfinity, Target, Sourse);
+                return (double.PositiveInfinity, Target, Source);
             }
             tempGraph.RemoveEdge(edge);
             //j->iが行けるか試す。
-            edge = new Edge(guid.ToString(), Target, Sourse, EdgeIJ.Weight);
+            edge = new Edge(guid.ToString(), Target, Source, EdgeIJ.Weight);
             tempGraph.AddEdge(edge);
             try
             {
-                var hoge = tempGraph.TopologicalSort();
+                tempGraph.TopologicalSort();
             }
             catch (NonAcyclicGraphException)
             {
-                return (double.PositiveInfinity, Sourse, Target);
+                return (double.PositiveInfinity, Source, Target);
             }
             tempGraph.RemoveEdge(edge);
             //どっちもできるので、実数を投げる。
-            var left = ancw[Sourse] + decw[Target] + MinSeparation(Sourse, Target);
-            var right = ancw[Target] + decw[Sourse] + MinSeparation(Sourse, Target);
+            var left = ancw[Source] + decw[Target] + MinSeparation(Source, Target);
+            var right = ancw[Target] + decw[Source] + MinSeparation(Source, Target);
             //left==rightのときは、枝刈り終了を意味するはず
             if (left == right)
             {
@@ -305,11 +305,11 @@ namespace Yoshimura
             }
             else if (left > right)
             {
-                return (Math.Max(left, right), Sourse, Target);
+                return (Math.Max(left, right), Source, Target);
             }
             else
             {
-                return (Math.Max(left, right), Target, Sourse);
+                return (Math.Max(left, right), Target, Source);
             }
         }
 
@@ -395,9 +395,9 @@ namespace Yoshimura
             const double boundaryClearance = 3;
             const double VerticalWireWidth = 10;
             var temp = upper.Concat(lower);
-            var youso = new HashSet<string>(temp.Select(a => a.net));
+            var element = new HashSet<string>(temp.Select(a => a.net));
             var IMOS = new Dictionary<double, double>();
-            foreach (var net in youso)
+            foreach (var net in element)
             {
                 var foo = temp.Where(a => a.net == net);
                 var min = foo.Min(a => a.xAxis) - VerticalWireWidth / 2;
