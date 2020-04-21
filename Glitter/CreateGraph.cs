@@ -15,28 +15,35 @@ namespace Glitter
 
     internal class CreateGraph
     {
-        internal Graph verticalGraph { get; }
-        internal Graph horizontalGraph { get; }
+        internal Graph VerticalGraph { get => verticalGraph; private set => verticalGraph = value; }
+        internal Graph HorizontalGraph { get => horizontalGraph; private set => horizontalGraph = value; }
         private Dictionary<string, int> wires;
         private IEnumerable<Terminal> upper;
         private IEnumerable<Terminal> lower;
-        internal double maxDensity;
+        internal double MaxDensity { get => maxDensity; private set => maxDensity = value; }
+
+        internal Dictionary<string, double> LocalMaximumDensity { get => localMaximumDensity; private set => localMaximumDensity = value; }
+        private Graph horizontalGraph;
+        private Graph verticalGraph;
+        private double maxDensity;
+        private Dictionary<string, double> localMaximumDensity;
+
         internal CreateGraph(IEnumerable<Terminal> upper, IEnumerable<Terminal> lower, Dictionary<string, int> wires)
         {
             this.upper = upper;
             this.lower = lower;
             this.wires = wires;
-            verticalGraph = new Graph();
-            horizontalGraph = new Graph();
+            VerticalGraph = new Graph();
+            HorizontalGraph = new Graph();
             CreateVerticalGraph();
             CreateHorizontalGraph();
-            MaximumDensity();
+            CalcLocalMaximumDensity();
         }
 
         private void CreateVerticalGraph()
         {
             var nets = new HashSet<string>(upper.Select(a => a.net).Concat(lower.Select(b => b.net)));
-            verticalGraph.AddVertexRange(nets);
+            VerticalGraph.AddVertexRange(nets);
             foreach (var item in upper)
             {
                 var verticalColisionList = lower.Where(a => a.xAxis == item.xAxis).ToList();
@@ -49,20 +56,20 @@ namespace Glitter
                 {
                     if (item.net == verticalColisionList[0].net) continue; //avoid self-loops
                     var temp = new Edge("net" + item.net, item.net, verticalColisionList[0].net, 1);
-                    verticalGraph.AddEdge(temp);
+                    VerticalGraph.AddEdge(temp);
                 }
             }
             //To checking graph is DAG or not, we are using exception of topologicalsort.
             //try-catch is very slow.
             try
             {
-                verticalGraph.TopologicalSort();
+                VerticalGraph.TopologicalSort();
             }
             catch (NonAcyclicGraphException)
             {
 
                 "VCG".WriteLine();
-                verticalGraph.Edges.ToString<Edge>().Write();
+                VerticalGraph.Edges.ToString<Edge>().Write();
                 Console.WriteLine("This is non-DAG graph. By LEA, there is no solution.");
                 Environment.Exit(1);
 
@@ -71,7 +78,7 @@ namespace Glitter
         private void CreateHorizontalGraph()
         {
             var nets = new HashSet<string>(upper.Select(a => a.net).Concat(lower.Select(b => b.net)));
-            horizontalGraph.AddVertexRange(nets);
+            HorizontalGraph.AddVertexRange(nets);
             var terminalSections = new List<(string net, int min, int max)>();
             foreach (var net in nets)
             {
@@ -91,21 +98,21 @@ namespace Glitter
                     {
                         var temp =
                             new Edge("net" + source.net + target.net, source.net, target.net, weight);
-                        horizontalGraph.AddEdge(temp);
+                        HorizontalGraph.AddEdge(temp);
                     }
                 }
             }
         }
-        private void MaximumDensity()
+
+        private void CalcLocalMaximumDensity()
         {
             var boundaryClearance = Constant.boundaryClearance;
             var verticalWireWidth = Constant.VerticalWireWidth;
-            var temp = upper.Concat(lower);
-            var element = new HashSet<string>(temp.Select(a => a.net));
+            var terminals = upper.Concat(lower);
             var IMOS = new Dictionary<double, double>();
-            foreach (var net in element)
+            foreach (var net in new HashSet<string>(terminals.Select(a => a.net)))
             {
-                var foo = temp.Where(a => a.net == net);
+                var foo = terminals.Where(a => a.net == net);
                 var min = foo.Min(a => a.xAxis) - verticalWireWidth / 2;
                 var max = foo.Max(a => a.xAxis) + verticalWireWidth / 2;
                 if (IMOS.ContainsKey(min))
@@ -126,15 +133,28 @@ namespace Glitter
                     IMOS[max] = -wires[net];
                 }
             }
-            var sum = 0.0;
-            var current = 0.0;
-            foreach (var item in IMOS)
-            {
-                current += item.Value;
-                sum = Math.Max(sum, current);
-            }
 
-            maxDensity = boundaryClearance * 2 + sum;
+            var temp = IMOS.Select(a => (a.Key, a.Value)).OrderBy(a => a.Key).ToList();
+            //累積和取らないといかんでしょ
+            var value = 0.0;
+            for (var i = 0; i < temp.Count; i++)
+            {
+                value += temp[i].Value;
+                temp[i] = (temp[i].Key, value);
+            }
+            LocalMaximumDensity = new Dictionary<string, double>();
+            foreach (var net in new HashSet<string>(terminals.Select(a => a.net)))
+            {
+                var foo = terminals.Where(a => a.net == net);
+                var min = foo.Min(a => a.xAxis) - verticalWireWidth / 2;
+                var minIndex = temp.FindIndex(a => a.Key == min);
+                var max = foo.Max(a => a.xAxis) + verticalWireWidth / 2;
+                var maxIndex = temp.FindIndex(a => a.Key == max);
+                //min~max間での最大Valueを探せば良い。
+                var density = temp.GetRange(minIndex, Math.Abs(maxIndex - minIndex)).Select(a => a.Value).Max();
+                LocalMaximumDensity.Add(net, density + boundaryClearance * 2);
+            }
+            MaxDensity = LocalMaximumDensity.Select(a => a.Value).Max();
         }
         private static bool IsInside<T>((T min, T max) a, (T min, T max) b) where T : IComparable<T>
         {

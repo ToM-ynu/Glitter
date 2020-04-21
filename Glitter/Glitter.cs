@@ -26,8 +26,9 @@ namespace Glitter
         {
             this.wires = wires;
             var graphs = new CreateGraph(upper, lower, wires);
-            verticalGraph = graphs.verticalGraph;
-            horizontalGraph = graphs.horizontalGraph;
+            verticalGraph = graphs.VerticalGraph;
+            horizontalGraph = graphs.HorizontalGraph;
+            var hoge = graphs.LocalMaximumDensity;
             "Creating Graph is done.".WriteLine();
 
             Console.WriteLine("VCG");
@@ -37,7 +38,7 @@ namespace Glitter
 
 
             Console.WriteLine("MAX density");
-            Console.WriteLine(graphs.maxDensity);
+            Console.WriteLine(graphs.MaxDensity);
             var weightedGraphs = new CreateWeightedGraph(verticalGraph, horizontalGraph, wires);
 
 
