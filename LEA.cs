@@ -184,6 +184,16 @@ namespace Glitter
             AddEdge(new Edge(edge.Name + "b", edge.Source, edge.Target, edge.Weight));
 
         }
+        public Graph()
+        {
+
+        }
+        public Graph(Graph graph)
+        {
+            AddVertexRange(graph.Vertices);
+            AddEdgeRange(graph.Edges.Select(a => new Edge(a)));
+        }
+
     }
     class Edge : IEdge<string>
     {
@@ -193,6 +203,13 @@ namespace Glitter
             Source = s;
             Target = t;
             Weight = w;
+        }
+        public Edge(Edge edge)
+        {
+            Name = edge.Name;
+            Source = edge.Source;
+            Target = edge.Target;
+            Weight = edge.Weight;
         }
 
         public string Name { get; set; }
@@ -208,8 +225,6 @@ namespace Glitter
             return $"{Source}->{Target} [label = {Weight}]";
         }
     }
-
-
 }
 
 
