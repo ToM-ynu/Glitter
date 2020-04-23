@@ -1,0 +1,37 @@
+Node-Selection Algorithm
+1) Initialization.
+    maxd(i) = maximal local density within the effective span of net i
+    CT = unprocessed nodes with minimum ancw(i)
+    CB = unprocessed nodes with minimum desw(i)
+    HT = horizontal constraints in CT HB = horizontal constraints in CB
+2)
+if (|HT| < |HB|)
+    goto TOP;
+else goto BOT.
+/*process CT along the upper boundary*/
+3) TOP:
+while (CT != 0) do {
+    4)
+    PT = candidates with the largest max(maxd(i), ancw(i) + desw(i)) in CT
+    LARGE = max(maxd(i), ancw(i) + desw(i)) in PT
+    5)
+    if (there are nodes in PT with ancw(i) + desw(i) = LARGE)
+        Select them and delete others from PT. 
+    6) Select nodes in PT with the largest maxd(i) and delete others from PT.
+    7) Select nodes in PT with the largest desw(i) and delete others from PT.
+    8) Process nodes in PT with the modified left/right edge algorithm. 
+    9) Update CT. }
+10) goto Edge-Selection.
+    /*Process CB along the lower boundary*/
+11) BOT: while (CB != 0) do {
+    12)
+    PB = candidates with the largest max(maxd(i), ancw(i) + desw(i)) in CB
+    LARGE = max(maxd(i), ancw(i) + desw(i)) in PB
+    13) if (there are nodes in PB with ancw(i) + desw(i) = = LARGE)
+        Select them and delete others from PB.
+    14) Select nodes in PB with the largest maxd(i) and delete others from PB.
+    15) Select nodes in PB with the largest ancw(i) and delete others from PB.
+    16) Process nodes in PB with the modified left/right edge algorithm.
+    17) Update CB. } 
+18) goto Edge-Selection.
+
