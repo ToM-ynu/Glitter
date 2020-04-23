@@ -45,7 +45,10 @@ namespace Glitter
 
             var selection = new WeightedGraphSelection
             (weightedGraphs.weightedDirectedGraph, weightedGraphs.weightedUndirectedGraph, graphs.LocalMaximumDensity, wires, horizontalGraph);
-
+            var glitter_result = selection.Selection();
+            Console.WriteLine("******Glitter Result*****");
+            glitter_result.ToString<string>().Write();
+            Console.WriteLine("******Glitter Result*****");
             Console.WriteLine("Init WCG");
             weightedGraphs.weightedDirectedGraph.Edges.ToString<Edge>(format: "{0}\n", end: "", begin: "").Write();
             weightedGraphs.weightedDirectedGraph.Edges.Count().WriteLine();

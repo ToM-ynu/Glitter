@@ -17,6 +17,7 @@ namespace Glitter
         string wireWidthCSVPath;
         IEnumerable<Terminal> upperSide, lowerSide;
         Dictionary<string, int> wires;
+        ///for Constrain-LEA
         public Channel(string channelCSVPath)
         {
             this.channelCSVPath = channelCSVPath;
@@ -33,6 +34,7 @@ namespace Glitter
             }
             var hoge = new LeftEdgeAlgorithm(upperSide, lowerSide);
         }
+        ///for glitter
         public Channel(string channelCSVPath, string wireWidthCSVPath)
         {
 
@@ -58,6 +60,19 @@ namespace Glitter
             }
             var hoge = new Glitter(upperSide, lowerSide, wires);
         }
+
+        // for internal call of Glitter
+        public Channel(IEnumerable<string> channel, IEnumerable<string> wires)
+        {
+            upperSide = new List<Terminal>();
+            lowerSide = new List<Terminal>();
+            this.wires = new Dictionary<string, int>();
+
+            var result = channel.Select(a => new CSVStruct(a));
+            upperSide = result.Where(a => a.ul == "u").Select(b => new Terminal(b)).OrderBy(c => c.xAxis);
+            lowerSide = result.Where(a => a.ul == "l").Select(b => new Terminal(b)).OrderBy(c => c.xAxis);
+            wires.Select(a => new wireWidth(a)).ToList().ForEach(x => this.wires.Add(x.net, x.width));
+        }
     }
 
     public class CSVStruct
@@ -69,6 +84,18 @@ namespace Glitter
         {
             return $"{ul},{net},{xAxis.ToString()}";
         }
+
+        public CSVStruct(string str)
+        {
+            var temp = str.Split(',');
+            ul = temp[0];
+            net = temp[1];
+            xAxis = int.Parse(temp[2]);
+        }
+
+        public CSVStruct(){
+
+        }
     }
 
     public class wireWidth
@@ -78,6 +105,17 @@ namespace Glitter
         public override string ToString()
         {
             return $"net:{net},{width}";
+        }
+
+        public wireWidth(string str)
+        {
+            var temp = str.Split(',');
+            net = temp[0];
+            width = int.Parse(temp[1]);
+        }
+
+        public wireWidth(){
+            
         }
     }
 
@@ -89,6 +127,14 @@ namespace Glitter
         {
             this.net = net;
             this.xAxis = xAxis;
+        }
+
+        public Terminal(string str)
+        {
+
+            var temp = str.Split(',');
+            net = temp[0];
+            xAxis = int.Parse(temp[1]);
         }
         public Terminal(CSVStruct cSVStruct)
         {

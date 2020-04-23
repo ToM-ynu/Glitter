@@ -38,25 +38,36 @@ namespace Glitter
             HorizontalConstrainGraph = new Graph(horizontalConstrainGraph);
             //書き換えられることはないと思うけど、DeepCopyで
             LocalMaximumDensity = new Dictionary<string, double>(localMaximumDensity);
-            Selection();
         }
-
-        private void Selection()
+        internal List<string> Selection()
         {
             var unprocessedSet = new HashSet<string>();
             unprocessedSet.UnionWith(WeightedDirectedGraph.Vertices);
+            var upper = new Queue<string>();
+            var lower = new Stack<string>();
+
             while (unprocessedSet.Count() != 2)
             {
                 NodeSelection(unprocessedSet);
-                Console.WriteLine("NodeSelection Done");
                 var order = EdgeSelection(unprocessedSet);
                 foreach (var (net, bound) in order)
                 {
-                    Console.WriteLine($"{net},{bound}");
+                    if (bound == "CT") upper.Enqueue(net);
+                    if (bound == "CB") lower.Push(net);
                 }
             }
-
+            var result = new List<string>();
+            while (upper.Count() != 0)
+            {
+                result.Add(upper.Dequeue());
+            }
+            while (lower.Count() != 0)
+            {
+                result.Add(lower.Pop());
+            }
+            return result;
         }
+
 
         //false で帰ってきたらNodeSelectionがいる。
         //trueで帰ってきたら、Unprocessed nodeがないので終了。
