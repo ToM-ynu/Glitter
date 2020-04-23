@@ -24,12 +24,13 @@ namespace Glitter
             //Create negative weighted directed graph
             tempGraph.AddVertexRange(weightedDirectedGraph.Vertices);
             tempGraph.AddEdgeRange(weightedDirectedGraph.Edges.Select(x => new Edge(x.Name, x.Source, x.Target, -x.Weight)));
-            //Solve shortest path of vertex -> Top
-            var algorithm = new BellmanFordShortestPathAlgorithm<string, Edge>(tempGraph, e => e.Weight);
-            var pred = new VertexPredecessorRecorderObserver<string, Edge>();
-            pred.Attach(algorithm);
+            //Solve shortest path of vertex -> Bot
+
             foreach (var vertex in tempGraph.Vertices.Where(a => a != "Top" && a != "Bot"))
             {
+                var algorithm = new BellmanFordShortestPathAlgorithm<string, Edge>(tempGraph, e => e.Weight);
+                var pred = new VertexPredecessorRecorderObserver<string, Edge>();
+                pred.Attach(algorithm);
                 algorithm.Compute(vertex);
                 IEnumerable<Edge> path;
                 pred.TryGetPath("Bot", out path);

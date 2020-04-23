@@ -28,7 +28,7 @@ namespace Glitter
             var graphs = new CreateGraph(upper, lower, wires);
             verticalGraph = graphs.VerticalGraph;
             horizontalGraph = graphs.HorizontalGraph;
-            var hoge = graphs.LocalMaximumDensity;
+            var temp = graphs.LocalMaximumDensity;
             "Creating Graph is done.".WriteLine();
 
             Console.WriteLine("VCG");
@@ -42,9 +42,24 @@ namespace Glitter
             var weightedGraphs = new CreateWeightedGraph(verticalGraph, horizontalGraph, wires);
 
 
+
+            var selection = new WeightedGraphSelection
+            (weightedGraphs.weightedDirectedGraph, weightedGraphs.weightedUndirectedGraph, graphs.LocalMaximumDensity, wires, horizontalGraph);
+
             Console.WriteLine("Init WCG");
             weightedGraphs.weightedDirectedGraph.Edges.ToString<Edge>(format: "{0}\n", end: "", begin: "").Write();
+            weightedGraphs.weightedDirectedGraph.Edges.Count().WriteLine();
             weightedGraphs.weightedUndirectedGraph.Edges.ToString<Edge>(format: "{0}\n", end: "", begin: "").Write();
+            weightedGraphs.weightedUndirectedGraph.Edges.Count().WriteLine();
+
+
+            Console.WriteLine("Returned WCG");
+
+            selection.WeightedDirectedGraph.Edges.ToString<Edge>(format: "{0}\n", end: "", begin: "").Write();
+            selection.WeightedDirectedGraph.Edges.Count().WriteLine();
+            selection.WeightedUndirectedGraph.Edges.ToString<Edge>(format: "{0}\n", end: "", begin: "").Write();
+            selection.WeightedUndirectedGraph.Edges.Count().WriteLine();
+
 
             // weightedDirectedGraph.Edges.ToString<Edge>(format: "{0}\n", end: "", begin: "").Write();
             // weightedUndirectedGraph.Edges.ToString<Edge>(format: "{0}\n", end: "", begin: "").Write();
