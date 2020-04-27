@@ -27,8 +27,7 @@ namespace Glitter
         private Dictionary<string, double> LocalMaximumDensity;
 
         private double MaxDensity { get => maxDensity; set => maxDensity = value; }
-        internal WeightedGraphSelection
-        (Graph weightedDirectedGraph, Graph weightedUndirectedGraph, IReadOnlyDictionary<string, double> localMaximumDensity, IReadOnlyDictionary<string, int> wires,
+        internal WeightedGraphSelection(Graph weightedDirectedGraph, Graph weightedUndirectedGraph, IReadOnlyDictionary<string, double> localMaximumDensity, IReadOnlyDictionary<string, int> wires,
         Graph horizontalConstrainGraph)
         {
             WeightedDirectedGraph = new Graph(weightedDirectedGraph);
@@ -39,24 +38,25 @@ namespace Glitter
             //書き換えられることはないと思うけど、DeepCopyで
             LocalMaximumDensity = new Dictionary<string, double>(localMaximumDensity);
         }
-        internal List<string> Selection()
+
+        internal List<(string, string, double)>  Selection()
         {
             var unprocessedSet = new HashSet<string>();
             unprocessedSet.UnionWith(WeightedDirectedGraph.Vertices);
-            var upper = new Queue<string>();
-            var lower = new Stack<string>();
+            var upper = new Queue<(string, string, double)>();
+            var lower = new Stack<(string, string, double)>();
 
             while (unprocessedSet.Count() != 2)
             {
                 NodeSelection(unprocessedSet);
                 var order = EdgeSelection(unprocessedSet);
-                foreach (var (net, bound) in order)
+                foreach (var (net, bound, hight) in order)
                 {
-                    if (bound == "CT") upper.Enqueue(net);
-                    if (bound == "CB") lower.Push(net);
+                    if (bound == "CT") upper.Enqueue((net, bound, hight));
+                    if (bound == "CB") lower.Push((net, bound, hight));
                 }
             }
-            var result = new List<string>();
+            var result = new List<(string, string, double)> ();
             while (upper.Count() != 0)
             {
                 result.Add(upper.Dequeue());
@@ -77,9 +77,9 @@ namespace Glitter
             while (count++ < 1000)
             {
                 var ancw = CreateChainWeight.Ancestor(WeightedDirectedGraph);
-                var decw = CreateChainWeight.Deanestor(WeightedDirectedGraph);
+                var desw = CreateChainWeight.Deanestor(WeightedDirectedGraph);
                 var LabelList = WeightedUndirectedGraph.Edges.
-                Select(a => (a, CalcLabel(a.Source, a.Target, ancw, decw))).
+                Select(a => (a, CalcLabel(a.Source, a.Target, ancw, desw))).
                 OrderByDescending(a => a.Item2.Item1).ToList();
                 //wire の割当が終了
                 if (LabelList.Count == 0)
@@ -96,19 +96,19 @@ namespace Glitter
                 LabelList.Select(a => a.Item2).ToString<(double, string, string)>().Write();
                 Console.Write("ANCW\t");
                 ancw.ToString<string, double>().Write();
-                Console.Write("DECW\t");
-                decw.ToString<string, double>().Write();
+                Console.Write("DESW\t");
+                desw.ToString<string, double>().Write();
                 WeightedDirectedGraph.Edges.ToString<Edge>(format: "{0}\n", end: "", begin: "").Write();
-                WeightedUndirectedGraph.Edges.ToString<Edge>(format: "{0}\n", end: "", begin: "").Write();
+                //WeightedUndirectedGraph.Edges.ToString<Edge>(format: "{0}\n", end: "", begin: "").Write();
 #endif
             }
             throw new Exception($"Beyond safety loop count {count}. If this value is not enough. Please change this limit");
 
         }
 
-        private List<(string, string)> EdgeSelection(HashSet<string> unprocessedSet)
+        private List<(string, string, double)> EdgeSelection(HashSet<string> unprocessedSet)
         {
-            var result = new List<(string, string)>();
+            var result = new List<(string, string, double)>();
             var ancw = new Dictionary<string, double>(CreateChainWeight.Ancestor(WeightedDirectedGraph).Where(b => unprocessedSet.Contains(b.Key)));
             var minAncw = ancw.Select(b => b.Value).Min();
             //unprocessed nodes with minimum ancw
@@ -134,7 +134,7 @@ namespace Glitter
                     IEnumerable<(string Key, double Value)> PT
                         = CT.Select(a => (a.Key, Math.Max(ancw[a.Key] + desw[a.Key], LocalMaximumDensity[a.Key])));
                     var PTLARGE = PT.Max(a => a.Value);
-                    // rule 1 (5) find ancw+decw==PTLARGE
+                    // rule 1 (5) find ancw+desw==PTLARGE
                     var PT_rule1 = PT.Where(a => a.Value == PTLARGE);
                     // rule 2 (7)  find larget local Maximum Density
                     var PTMAX = PT.Max(a => LocalMaximumDensity[a.Key]);
@@ -153,7 +153,7 @@ namespace Glitter
                     CT = CT.Where(a => unprocessedSet.Contains(a.Key));
                     foreach (var item in processPT)
                     {
-                        result.Add((item, "CT"));
+                        result.Add((item, "CT", ancw[item]));
                     }
                 }
             }
@@ -186,7 +186,7 @@ namespace Glitter
                     CB = CB.Where(a => unprocessedSet.Contains(a.Key));
                     foreach (var item in processPB)
                     {
-                        result.Add((item, "CB"));
+                        result.Add((item, "CB", desw[item]));
                     }
                 }
             }
