@@ -171,8 +171,8 @@ namespace Glitter
         private bool IsVerticalColision(Terminal upper, Terminal lower)
         {
             var temp = new List<(double, double)>();
-            temp.Add((upper.xAxis - Constant.boundaryClearance - wires[upper.net].upper / 2, upper.xAxis + Constant.boundaryClearance + wires[upper.net].upper / 2));
-            temp.Add((lower.xAxis - Constant.boundaryClearance - wires[lower.net].lower / 2, lower.xAxis + Constant.boundaryClearance + wires[lower.net].lower / 2));
+            temp.Add((upper.xAxis - (Constant.boundaryClearance + wires[upper.net].upper) / 2, upper.xAxis + (Constant.boundaryClearance + wires[upper.net].upper) / 2));
+            temp.Add((lower.xAxis - (Constant.boundaryClearance + wires[lower.net].lower) / 2, lower.xAxis + (Constant.boundaryClearance + wires[lower.net].lower) / 2));
             temp.Sort();
             return temp[0].Item1 <= temp[1].Item1 && temp[1].Item1 <= temp[0].Item2;
         }
