@@ -23,15 +23,15 @@ namespace Glitter
         public List<(string, double)> Result { get => result; private set => result = value; }
         private IEnumerable<Terminal> upper, lower;
         internal CalcLength calc;
-        UnitInductance unitInductance;
 
-        public Glitter(IEnumerable<Terminal> upper, IEnumerable<Terminal> lower, Dictionary<string, int> wires, UnitInductance unitInductance)
+
+        public Glitter(IEnumerable<Terminal> upper, IEnumerable<Terminal> lower, Dictionary<string, int> wires)
         {
             this.upper = upper;
             this.lower = lower;
             this.wires = wires;
             graphs = new CreateGraph(upper, lower, wires);
-            this.unitInductance = unitInductance;
+
         }
 
         public void Calc()
@@ -51,8 +51,8 @@ namespace Glitter
             Result = new List<(string, double)>();
             Result = glitter_result.Select(a => (a.Item1, a.Item2 == "CB" ? channelHight - a.Item3 : a.Item3)).ToList();
 
-            calc = new CalcLength(upper, lower, Result, channelHight, unitInductance);
-            foreach (var (a, b) in result)
+            calc = new CalcLength(upper, lower, Result, channelHight, wires);
+            foreach (var (a, b) in Result)
             {
                 Console.Write(calc.GetLength(a));
                 Console.WriteLine(calc.GetInductance(a));
@@ -74,9 +74,20 @@ namespace Glitter
         {
             using (var streamWriter = new StreamWriter("glitterResult.csv"))
             {
-                foreach (var (net, hight) in result)
+                foreach (var (net, hight) in Result)
                 {
                     streamWriter.Write($"{net},{hight}\n");
+                }
+            }
+        }
+
+        public void WriteInductanceCSV()
+        {
+            using (var streamWriter = new StreamWriter("InductanceResult.csv"))
+            {
+                foreach (var (net, (upper, horizontal, lower)) in Result.OrderBy(a => a.Item1).Select(a => (a.Item1, calc.GetInductance(a.Item1))))
+                {
+                    streamWriter.Write($"{net},{upper},{horizontal},{lower}\n");
                 }
             }
         }
