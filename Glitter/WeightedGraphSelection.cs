@@ -17,7 +17,7 @@ namespace Glitter
     {
         internal Graph WeightedDirectedGraph { get => weightedDirectedGraph; private set => weightedDirectedGraph = value; }
         internal Graph WeightedUndirectedGraph { get => weightedUndirectedGraph; private set => weightedUndirectedGraph = value; }
-        private Dictionary<string, int> wires;
+       Dictionary<string, (int upper, int lower, int horizontal)> wires;
         private Graph weightedDirectedGraph;
         private Graph weightedUndirectedGraph;
         private double maxDensity;
@@ -27,13 +27,13 @@ namespace Glitter
         private Dictionary<string, double> LocalMaximumDensity;
 
         private double MaxDensity { get => maxDensity; set => maxDensity = value; }
-        internal WeightedGraphSelection(Graph weightedDirectedGraph, Graph weightedUndirectedGraph, IReadOnlyDictionary<string, double> localMaximumDensity, IReadOnlyDictionary<string, int> wires,
+        internal WeightedGraphSelection(Graph weightedDirectedGraph, Graph weightedUndirectedGraph, IReadOnlyDictionary<string, double> localMaximumDensity, Dictionary<string, (int upper, int lower, int horizontal)> wires,
         Graph horizontalConstrainGraph)
         {
             WeightedDirectedGraph = new Graph(weightedDirectedGraph);
             WeightedUndirectedGraph = new Graph(weightedUndirectedGraph);
             MaxDensity = localMaximumDensity.Max(a => a.Value);
-            this.wires = new Dictionary<string, int>(wires);
+            this.wires = new Dictionary<string, (int upper, int lower, int horizontal)>(wires);
             HorizontalConstrainGraph = new Graph(horizontalConstrainGraph);
             //書き換えられることはないと思うけど、DeepCopyで
             LocalMaximumDensity = new Dictionary<string, double>(localMaximumDensity);
@@ -272,7 +272,7 @@ namespace Glitter
 
         private double MinSeparation(string i, string j)
         {
-            return Constant.minSpacing + wires[i] / 2 + wires[j] / 2;
+            return Constant.minSpacing + wires[i].horizontal / 2 +wires[j].horizontal / 2;
         }
 
         private void ProcessNodes(IEnumerable<string> netName, string direction)

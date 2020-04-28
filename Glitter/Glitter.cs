@@ -17,7 +17,7 @@ namespace Glitter
     public class Glitter
     {
         CreateGraph graphs;
-        Dictionary<string, int> wires;
+        Dictionary<string, (int upper, int lower, int horizontal)> wires;
         public double channelHight;
         private List<(string, double)> result;
         public List<(string, double)> Result { get => result; private set => result = value; }
@@ -25,7 +25,7 @@ namespace Glitter
         internal CalcLength calc;
 
 
-        public Glitter(IEnumerable<Terminal> upper, IEnumerable<Terminal> lower, Dictionary<string, int> wires)
+        public Glitter(IEnumerable<Terminal> upper, IEnumerable<Terminal> lower, Dictionary<string, (int upper, int lower, int horizontal)> wires)
         {
             this.upper = upper;
             this.lower = lower;

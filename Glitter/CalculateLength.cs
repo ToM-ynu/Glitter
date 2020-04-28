@@ -21,7 +21,7 @@ namespace Glitter
         Dictionary<string, int> upper, lower;
         Dictionary<string, double> horizontalHight;
 
-        Dictionary<string, int> wires;
+        Dictionary<string, (int upper, int lower, int horizontal)> wires;
 
 
         double channelHight;
@@ -31,7 +31,7 @@ namespace Glitter
 
         Dictionary<int, double> verticalInductanceDictionary { get; set; }
         Dictionary<int, double> horizontalInductanceDictionary { get; set; }
-        internal CalcLength(IEnumerable<Terminal> upper, IEnumerable<Terminal> lower, IEnumerable<(string net, double hight)> horizontalHight, double channelHight, Dictionary<string, int> wires)
+        internal CalcLength(IEnumerable<Terminal> upper, IEnumerable<Terminal> lower, IEnumerable<(string net, double hight)> horizontalHight, double channelHight, Dictionary<string, (int upper, int lower, int horizontal)> wires)
         {
             this.upper = new Dictionary<string, int>(upper.Select(a => new KeyValuePair<string, int>(a.net, a.xAxis)));
             this.lower = new Dictionary<string, int>(lower.Select(a => new KeyValuePair<string, int>(a.net, a.xAxis)));
@@ -43,7 +43,6 @@ namespace Glitter
             using (var csv = new CsvReader(srHorizontalInductace, CultureInfo.InvariantCulture))
             {
                 csv.Configuration.HasHeaderRecord = false; // When csv has no index row.
-                csv.Read();
                 horizontalInductanceDictionary = new Dictionary<int, double>(csv.GetRecords<Inductance>().Select(a => new KeyValuePair<int, double>(a.Width, a.Value)));
             }
 
@@ -51,9 +50,7 @@ namespace Glitter
             using (var csv = new CsvReader(srHorizontalInductace, CultureInfo.InvariantCulture))
             {
                 csv.Configuration.HasHeaderRecord = false; // When csv has no index row.
-                csv.Read();
                 verticalInductanceDictionary = new Dictionary<int, double>(csv.GetRecords<Inductance>().Select(a => new KeyValuePair<int, double>(a.Width, a.Value)));
-
             }
 
 
@@ -71,9 +68,9 @@ namespace Glitter
         {
             var result = GetLength(net);
             return (
-                result.upper * verticalInductanceDictionary[wires[net]],
-                result.horizontal * horizontalInductanceDictionary[wires[net]],
-                result.lower * verticalInductanceDictionary[wires[net]]);
+                result.upper * verticalInductanceDictionary[wires[net].upper],
+                result.horizontal * horizontalInductanceDictionary[wires[net].horizontal],
+                result.lower * verticalInductanceDictionary[wires[net].lower]);
 
 
         }

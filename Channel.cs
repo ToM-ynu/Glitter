@@ -16,7 +16,7 @@ namespace Glitter
         string channelCSVPath;
         string wireWidthCSVPath;
         IEnumerable<Terminal> upperSide, lowerSide;
-        Dictionary<string, int> wires;
+        Dictionary<string, (int upper, int lower, int horizontal)> wires;
         ///for Constrain-LEA
         public Channel(string channelCSVPath)
         {
@@ -42,7 +42,6 @@ namespace Glitter
             this.wireWidthCSVPath = wireWidthCSVPath;
             upperSide = new List<Terminal>();
             lowerSide = new List<Terminal>();
-            wires = new Dictionary<string, int>();
             using (var srChannelCSVPath = new StreamReader(channelCSVPath))
             using (var csv = new CsvReader(srChannelCSVPath, CultureInfo.InvariantCulture))
             {
@@ -55,8 +54,12 @@ namespace Glitter
             using (var srWireWidthCSVPath = new StreamReader(wireWidthCSVPath))
             using (var csv = new CsvReader(srWireWidthCSVPath, CultureInfo.InvariantCulture))
             {
-                csv.Configuration.HasHeaderRecord = false; // When csv has no index row.
-                csv.GetRecords<wireWidth>().ToList().ForEach(x => wires.Add(x.net, x.width));
+                csv.Configuration.HasHeaderRecord = false;
+                wires =
+                new Dictionary<string, (int upper, int lower, int horizontal)>
+                (csv.GetRecords<wireWidth>()
+                .Select(a => new KeyValuePair<string, (int upper, int lower, int horizontal)>(a.net, (a.widthUpper, a.widthLower, a.widthHorizontal))));
+
             }
 
             var glitter = new Glitter(upperSide, lowerSide, wires);
@@ -70,12 +73,13 @@ namespace Glitter
         {
             upperSide = new List<Terminal>();
             lowerSide = new List<Terminal>();
-            this.wires = new Dictionary<string, int>();
+            this.wires = new Dictionary<string, (int upper, int lower, int horizontal)>();
 
             var result = channel.Select(a => new CSVStruct(a));
             upperSide = result.Where(a => a.ul == "u").Select(b => new Terminal(b)).OrderBy(c => c.xAxis);
             lowerSide = result.Where(a => a.ul == "l").Select(b => new Terminal(b)).OrderBy(c => c.xAxis);
-            wires.Select(a => new wireWidth(a)).ToList().ForEach(x => this.wires.Add(x.net, x.width));
+            throw new NotImplementedException();
+            //   wires.Select(a => new wireWidth(a)).ToList().ForEach(x => this.wires.Add(x.net, x.widthHorizontal));
         }
     }
 
@@ -106,17 +110,20 @@ namespace Glitter
     public class wireWidth
     {
         public string net { get; set; }
-        public int width { get; set; }
+        public int widthUpper { get; set; }
+        public int widthHorizontal { get; set; }
+        public int widthLower { get; set; }
         public override string ToString()
         {
-            return $"net:{net},{width}";
+            return $"net:{net},{widthHorizontal}";
         }
 
         public wireWidth(string str)
         {
             var temp = str.Split(',');
             net = temp[0];
-            width = int.Parse(temp[1]);
+            widthHorizontal = int.Parse(temp[1]);
+            throw new NotImplementedException();
         }
 
         public wireWidth()
