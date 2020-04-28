@@ -17,7 +17,7 @@ namespace Glitter
     {
         internal Graph VerticalGraph { get => verticalGraph; private set => verticalGraph = value; }
         internal Graph HorizontalGraph { get => horizontalGraph; private set => horizontalGraph = value; }
-        private Dictionary<string, int> wires;
+        Dictionary<string, (int upper, int lower, int horizontal)> wires;
         private IEnumerable<Terminal> upper;
         private IEnumerable<Terminal> lower;
         internal double MaxDensity { get => maxDensity; private set => maxDensity = value; }
@@ -28,7 +28,7 @@ namespace Glitter
         private double maxDensity;
         private Dictionary<string, double> localMaximumDensity;
 
-        internal CreateGraph(IEnumerable<Terminal> upper, IEnumerable<Terminal> lower, Dictionary<string, int> wires)
+        internal CreateGraph(IEnumerable<Terminal> upper, IEnumerable<Terminal> lower, Dictionary<string, (int upper, int lower, int horizontal)> wires)
         {
             this.upper = upper;
             this.lower = lower;
@@ -93,7 +93,7 @@ namespace Glitter
                 for (int j = i + 1; j < terminalSections.Count; j++)
                 {
                     var target = terminalSections[j];
-                    var weight = Constant.minSpacing + wires[source.net] / 2 + wires[target.net] / 2;
+                    var weight = Constant.minSpacing + wires[source.net].horizontal / 2 + wires[target.net].horizontal / 2;
                     if (IsInside((target.min, target.max), (source.min, source.max)))
                     {
                         var temp =
@@ -117,20 +117,20 @@ namespace Glitter
                 var max = foo.Max(a => a.xAxis) + verticalWireWidth / 2;
                 if (IMOS.ContainsKey(min))
                 {
-                    IMOS[min] += wires[net];
+                    IMOS[min] += wires[net].horizontal;
                 }
                 else
                 {
-                    IMOS[min] = wires[net];
+                    IMOS[min] = wires[net].horizontal;
                 }
 
                 if (IMOS.ContainsKey(max))
                 {
-                    IMOS[max] += -wires[net];
+                    IMOS[max] += -wires[net].horizontal;
                 }
                 else
                 {
-                    IMOS[max] = -wires[net];
+                    IMOS[max] = -wires[net].horizontal;
                 }
             }
 
