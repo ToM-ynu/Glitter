@@ -21,8 +21,10 @@ namespace Glitter
         {
             weightedDirectedGraph = new Graph();
             weightedUndirectedGraph = new Graph();
+
             weightedDirectedGraph.AddVertexRange(verticalGraph.Vertices);
-            weightedDirectedGraph.AddEdgeRange(verticalGraph.Edges);
+            var verticalEdges = verticalGraph.Edges.Select(a => new Edge(a.Name, a.Source, a.Target, (wires[a.Source] + wires[a.Target]) / 2));
+            weightedDirectedGraph.AddEdgeRange(verticalEdges);
 
             weightedUndirectedGraph.AddVertexRange(horizontalGraph.Vertices);
             weightedUndirectedGraph.AddEdgeRange(horizontalGraph.Edges);

@@ -26,7 +26,7 @@ namespace Glitter
             tempGraph.AddEdgeRange(weightedDirectedGraph.Edges.Select(x => new Edge(x.Name, x.Source, x.Target, -x.Weight)));
             //Solve shortest path of vertex -> Bot
 
-            foreach (var vertex in tempGraph.Vertices.Where(a => a != "Top" && a != "Bot"))
+            foreach (var vertex in tempGraph.Vertices)
             {
                 var algorithm = new BellmanFordShortestPathAlgorithm<string, Edge>(tempGraph, e => e.Weight);
                 var pred = new VertexPredecessorRecorderObserver<string, Edge>();
@@ -50,7 +50,7 @@ namespace Glitter
             var algorithm = new BellmanFordShortestPathAlgorithm<string, Edge>(tempGraph, e => e.Weight);
             var pred = new VertexPredecessorRecorderObserver<string, Edge>();
             pred.Attach(algorithm);
-            foreach (var vertex in tempGraph.Vertices.Where(a => a != "Top" && a != "Bot"))
+            foreach (var vertex in tempGraph.Vertices)
             {
                 algorithm.Compute("Top");
                 IEnumerable<Edge> path;

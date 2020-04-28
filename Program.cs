@@ -6,7 +6,7 @@ namespace Glitter
     {
         static void Main(string[] args)
         {
-            var channel = new Channel("channel2.csv","wireWidth.csv");
+            var channel = new Channel("Input/channel2.csv", "Input/wireWidth.csv");
         }
 
     }
