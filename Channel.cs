@@ -35,7 +35,7 @@ namespace Glitter
             var hoge = new LeftEdgeAlgorithm(upperSide, lowerSide);
         }
         ///for glitter
-        public Channel(string channelCSVPath, string wireWidthCSVPath)
+        public Channel(string channelCSVPath, string wireWidthCSVPath, string unitInductancePath)
         {
 
             this.channelCSVPath = channelCSVPath;
@@ -58,7 +58,19 @@ namespace Glitter
                 csv.Configuration.HasHeaderRecord = false; // When csv has no index row.
                 csv.GetRecords<wireWidth>().ToList().ForEach(x => wires.Add(x.net, x.width));
             }
-            var hoge = new Glitter(upperSide, lowerSide, wires);
+
+            UnitInductance unitInductance;
+            using (var srUnitInductance = new StreamReader(unitInductancePath))
+            using (var csv = new CsvReader(srUnitInductance, CultureInfo.InvariantCulture))
+            {
+                csv.Configuration.HasHeaderRecord = false; // When csv has no index row.
+                csv.Read();
+                unitInductance = csv.GetRecord<UnitInductance>();
+            }
+
+            var glitter = new Glitter(upperSide, lowerSide, wires, unitInductance);
+            glitter.Calc();
+            glitter.WriteGlitterCSV();
         }
 
         // for internal call of Glitter
@@ -93,7 +105,8 @@ namespace Glitter
             xAxis = int.Parse(temp[2]);
         }
 
-        public CSVStruct(){
+        public CSVStruct()
+        {
 
         }
     }
@@ -114,8 +127,9 @@ namespace Glitter
             width = int.Parse(temp[1]);
         }
 
-        public wireWidth(){
-            
+        public wireWidth()
+        {
+
         }
     }
 

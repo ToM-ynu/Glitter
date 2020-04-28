@@ -16,32 +16,28 @@ namespace Glitter
 
     public class Glitter
     {
-        Graph verticalGraph;
-        Graph horizontalGraph;
-
-        ///Directed graph とUndirected graphは別のグラフに持ったほうが良さそう
+        CreateGraph graphs;
         Dictionary<string, int> wires;
-
         public double channelHight;
+        private List<(string, double)> result;
+        public List<(string, double)> Result { get => result; private set => result = value; }
+        private IEnumerable<Terminal> upper, lower;
+        internal CalcLength calc;
+        UnitInductance unitInductance;
 
-        List<(string, double)> result;
-
-        public Glitter(IEnumerable<Terminal> upper, IEnumerable<Terminal> lower, Dictionary<string, int> wires)
+        public Glitter(IEnumerable<Terminal> upper, IEnumerable<Terminal> lower, Dictionary<string, int> wires, UnitInductance unitInductance)
         {
+            this.upper = upper;
+            this.lower = lower;
             this.wires = wires;
-            var graphs = new CreateGraph(upper, lower, wires);
-            verticalGraph = graphs.VerticalGraph;
-            horizontalGraph = graphs.HorizontalGraph;
-            var temp = graphs.LocalMaximumDensity;
-            "Creating Graph is done.".WriteLine();
+            graphs = new CreateGraph(upper, lower, wires);
+            this.unitInductance = unitInductance;
+        }
 
-            Console.WriteLine("VCG");
-            verticalGraph.Edges.ToString<Edge>(format: "{0}\n", end: "", begin: "").Write();
-            Console.WriteLine("HCG");
-            horizontalGraph.Edges.ToString<Edge>(format: "{0}\n", end: "", begin: "").Write();
-
-            var weightedGraphs = new CreateWeightedGraph(verticalGraph, horizontalGraph, wires);
-            var selection = new WeightedGraphSelection(weightedGraphs.weightedDirectedGraph, weightedGraphs.weightedUndirectedGraph, graphs.LocalMaximumDensity, wires, horizontalGraph);
+        public void Calc()
+        {
+            var weightedGraphs = new CreateWeightedGraph(graphs.VerticalGraph, graphs.HorizontalGraph, wires);
+            var selection = new WeightedGraphSelection(weightedGraphs.weightedDirectedGraph, weightedGraphs.weightedUndirectedGraph, graphs.LocalMaximumDensity, wires, graphs.HorizontalGraph);
             var glitter_result = selection.Selection();
 
             Console.WriteLine("Returned WCG");
@@ -52,84 +48,37 @@ namespace Glitter
             this.channelHight = channelHight;
             Console.WriteLine(channelHight);
 
-            Console.WriteLine("Routing Order Glitter (net, direction from top)");
-            result = new List<(string, double)>();
-            result = glitter_result.Select(a => (a.Item1, a.Item2 == "CB" ? channelHight - a.Item3 : a.Item3)).ToList();
-            result.ToString<(string, double)>().Write();
+            Result = new List<(string, double)>();
+            Result = glitter_result.Select(a => (a.Item1, a.Item2 == "CB" ? channelHight - a.Item3 : a.Item3)).ToList();
+
+            calc = new CalcLength(upper, lower, Result, channelHight, unitInductance);
+            foreach (var (a, b) in result)
+            {
+                Console.Write(calc.GetLength(a));
+                Console.WriteLine(calc.GetInductance(a));
+            }
 #if DEBUG
+            Console.WriteLine("VCG");
+            graphs.VerticalGraph.Edges.ToString<Edge>(format: "{0}\n", end: "", begin: "").Write();
+            Console.WriteLine("HCG");
+            graphs.HorizontalGraph.Edges.ToString<Edge>(format: "{0}\n", end: "", begin: "").Write();
+
             Console.WriteLine("Init WCG(Directed)");
             weightedGraphs.weightedDirectedGraph.Edges.ToString<Edge>(format: "{0}\n", end: "", begin: "").Write();
             Console.WriteLine("Init WCG(unDirected)");
             weightedGraphs.weightedUndirectedGraph.Edges.ToString<Edge>(format: "{0}\n", end: "", begin: "").Write();
 #endif
-
-            CreateGlitterCSV(result);
         }
 
-        private List<string> VerticalLeafList()
+        public void WriteGlitterCSV()
         {
-
-            var result = new List<string>();
-            foreach (var vertical in verticalGraph.Vertices)
-            {
-                var flag = true;
-                foreach (var edge in verticalGraph.Edges)
-                {
-                    if (edge.Source == vertical) flag = false;
-                }
-                if (flag)
-                {
-                    //This vertical is not source of all edges.
-                    result.Add(vertical);
-                }
-            }
-            return result;
-        }
-
-        private bool IsDirectPassExist(string source, List<string> target)
-        {
-            return horizontalGraph.Edges.Where(a => a.Source == source).Select(a => a.Target).Intersect(target).Count() != 0;
-        }
-
-        private bool IsStraightWire(string net, IEnumerable<Terminal> upper, IEnumerable<Terminal> lower)
-        {
-            return upper.First(a => a.net == net).xAxis == lower.First(a => a.net == net).xAxis;
-        }
-
-        private void OutputResult(Dictionary<int, List<string>> dir)
-        {
-            foreach (var item in dir)
-            {
-                item.Key.Write();
-                (":" + item.Value.ToString<string>()).Write();
-            }
-        }
-
-        private void CreateGlitterCSV(IEnumerable<(string, double)> list)
-        {
-
             using (var streamWriter = new StreamWriter("glitterResult.csv"))
             {
-                foreach (var (net, hight) in list)
+                foreach (var (net, hight) in result)
                 {
                     streamWriter.Write($"{net},{hight}\n");
                 }
             }
         }
-
-
-
     }
-
-    public class WireWidth
-    {
-        public string ul { get; set; }
-        public string net { get; set; }
-        public int xAxis { get; set; }
-        public override string ToString()
-        {
-            return $"{ul},{net},{xAxis.ToString()}";
-        }
-    }
-
 }
