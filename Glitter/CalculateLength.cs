@@ -43,7 +43,6 @@ namespace Glitter
             using (var csv = new CsvReader(srHorizontalInductace, CultureInfo.InvariantCulture))
             {
                 csv.Configuration.HasHeaderRecord = false; // When csv has no index row.
-                csv.Read();
                 horizontalInductanceDictionary = new Dictionary<int, double>(csv.GetRecords<Inductance>().Select(a => new KeyValuePair<int, double>(a.Width, a.Value)));
             }
 
@@ -51,9 +50,7 @@ namespace Glitter
             using (var csv = new CsvReader(srHorizontalInductace, CultureInfo.InvariantCulture))
             {
                 csv.Configuration.HasHeaderRecord = false; // When csv has no index row.
-                csv.Read();
                 verticalInductanceDictionary = new Dictionary<int, double>(csv.GetRecords<Inductance>().Select(a => new KeyValuePair<int, double>(a.Width, a.Value)));
-
             }
 
 

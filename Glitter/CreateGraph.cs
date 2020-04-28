@@ -44,19 +44,21 @@ namespace Glitter
         {
             var nets = new HashSet<string>(upper.Select(a => a.net).Concat(lower.Select(b => b.net)));
             VerticalGraph.AddVertexRange(nets);
-            foreach (var item in upper)
+
+            //position of terminal ± (width of Vertical wire +2* clearance)/2 is
+            foreach (var upperTerminal in upper)
             {
-                var verticalColisionList = lower.Where(a => a.xAxis == item.xAxis).ToList();
+                var verticalColisionList = lower.Where(a => IsVerticalColision(upperTerminal, a)).ToList();
                 if (verticalColisionList.Count == 0) continue;
-                else if (verticalColisionList.Count > 1)
-                {
-                    throw new InvalidDataException("Invalid input data");
-                }
                 else
                 {
-                    if (item.net == verticalColisionList[0].net) continue; //avoid self-loops
-                    var temp = new Edge("net" + item.net, item.net, verticalColisionList[0].net, 1);
-                    VerticalGraph.AddEdge(temp);
+                    foreach (var colisionUpper in verticalColisionList)
+                    {
+                        if (upperTerminal.net == colisionUpper.net) continue; //avoid self-loops
+                        var temp = new Edge("net" + upperTerminal.net, upperTerminal.net, colisionUpper.net, 1);
+                        VerticalGraph.AddEdge(temp);
+                    }
+
                 }
             }
             //To checking graph is DAG or not, we are using exception of topologicalsort.
@@ -68,8 +70,8 @@ namespace Glitter
             catch (NonAcyclicGraphException)
             {
 
-                "VCG".WriteLine();
-                VerticalGraph.Edges.ToString<Edge>().Write();
+                Console.WriteLine("VCG");
+                VerticalGraph.Edges.ToString<Edge>(format: "{0}\n", end: "", begin: "").Write();
                 Console.WriteLine("This is non-DAG graph. By LEA, there is no solution.");
                 Environment.Exit(1);
 
@@ -164,6 +166,15 @@ namespace Glitter
             flag |= (b.min.CompareTo(a.min) <= 0 && b.max.CompareTo(a.min) >= 0);
             flag |= (b.min.CompareTo(a.max) <= 0 && b.max.CompareTo(a.max) >= 0);
             return flag;
+        }
+
+        private bool IsVerticalColision(Terminal upper, Terminal lower)
+        {
+            var temp = new List<(double, double)>();
+            temp.Add((upper.xAxis - Constant.boundaryClearance - wires[upper.net].upper / 2, upper.xAxis + Constant.boundaryClearance + wires[upper.net].upper / 2));
+            temp.Add((lower.xAxis - Constant.boundaryClearance - wires[lower.net].lower / 2, lower.xAxis + Constant.boundaryClearance + wires[lower.net].lower / 2));
+            temp.Sort();
+            return temp[0].Item1 <= temp[1].Item1 && temp[1].Item1 <= temp[0].Item2;
         }
     }
 
