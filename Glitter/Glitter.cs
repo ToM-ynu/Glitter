@@ -70,7 +70,8 @@ namespace Glitter
 #endif
         }
 
-        public void WriteGlitterCSV()
+        public void
+        WriteGlitterCSV()
         {
             using (var streamWriter = new StreamWriter("glitterResult.csv"))
             {
@@ -86,6 +87,17 @@ namespace Glitter
             using (var streamWriter = new StreamWriter("InductanceResult.csv"))
             {
                 foreach (var (net, (upper, horizontal, lower)) in Result.OrderBy(a => a.Item1).Select(a => (a.Item1, calc.GetInductance(a.Item1))))
+                {
+                    streamWriter.Write($"{net},{upper},{horizontal},{lower}\n");
+                }
+            }
+        }
+
+        public void WriteSegmentLengthCSV()
+        {
+            using (var streamWriter = new StreamWriter("SegmentLength.csv"))
+            {
+                foreach (var (net, (upper, horizontal, lower)) in Result.OrderBy(a => a.Item1).Select(a => (a.Item1, calc.GetLength(a.Item1))))
                 {
                     streamWriter.Write($"{net},{upper},{horizontal},{lower}\n");
                 }

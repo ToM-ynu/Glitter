@@ -66,6 +66,7 @@ namespace Glitter
             glitter.Calc();
             glitter.WriteGlitterCSV();
             glitter.WriteInductanceCSV();
+            glitter.WriteSegmentLengthCSV();
         }
 
         // for internal call of Glitter
