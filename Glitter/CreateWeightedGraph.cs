@@ -1,14 +1,5 @@
-using System;
 using System.Collections.Generic;
-using System.Globalization;
-using System.IO;
 using System.Linq;
-using System.Text;
-using CsvHelper;
-using QuickGraph;
-using QuickGraph.Algorithms;
-using QuickGraph.Algorithms.Observers;
-using QuickGraph.Algorithms.ShortestPath;
 
 namespace Glitter
 {
@@ -23,7 +14,7 @@ namespace Glitter
             weightedUndirectedGraph = new Graph();
 
             weightedDirectedGraph.AddVertexRange(verticalGraph.Vertices);
-            var verticalEdges = verticalGraph.Edges.Select(a => new Edge(a.Name, a.Source, a.Target, (wires[a.Source].horizontal + wires[a.Target].horizontal) / 2));
+            var verticalEdges = verticalGraph.Edges.Select(a => new Edge(a.Name, a.Source, a.Target, (wires[a.Source].horizontal + wires[a.Target].horizontal) / 2.0));
             weightedDirectedGraph.AddEdgeRange(verticalEdges);
 
             weightedUndirectedGraph.AddVertexRange(horizontalGraph.Vertices);
@@ -34,7 +25,7 @@ namespace Glitter
             weightedDirectedGraph.AddVertexRange(new string[] { "Top", "Bot" });
             foreach (var item in HCGRoot)
             {
-                var weight = Constant.minSpacing + wires[item].horizontal / 2;
+                var weight = Constant.minSpacing + wires[item].horizontal / 2.0;
                 var temp =
                            new Edge($"netTop{item}", "Top", item, weight);
                 weightedDirectedGraph.AddEdge(temp);
@@ -42,7 +33,7 @@ namespace Glitter
             }
             foreach (var item in HCGLeaf)
             {
-                var weight = Constant.minSpacing + wires[item].horizontal / 2;
+                var weight = Constant.minSpacing + wires[item].horizontal / 2.0;
                 var temp =
                            new Edge($"net{item}Bot", item, "Bot", weight);
                 weightedDirectedGraph.AddEdge(temp);
