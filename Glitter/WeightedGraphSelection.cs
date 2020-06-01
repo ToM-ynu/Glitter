@@ -9,6 +9,7 @@ using QuickGraph;
 using QuickGraph.Algorithms;
 using QuickGraph.Algorithms.Observers;
 using QuickGraph.Algorithms.ShortestPath;
+using System.Collections.Concurrent;
 
 namespace Glitter
 {
@@ -17,7 +18,7 @@ namespace Glitter
     {
         internal Graph WeightedDirectedGraph { get => weightedDirectedGraph; private set => weightedDirectedGraph = value; }
         internal Graph WeightedUndirectedGraph { get => weightedUndirectedGraph; private set => weightedUndirectedGraph = value; }
-       Dictionary<string, (int upper, int lower, int horizontal)> wires;
+        Dictionary<string, (int upper, int lower, int horizontal)> wires;
         private Graph weightedDirectedGraph;
         private Graph weightedUndirectedGraph;
         private double maxDensity;
@@ -39,7 +40,7 @@ namespace Glitter
             LocalMaximumDensity = new Dictionary<string, double>(localMaximumDensity);
         }
 
-        internal List<(string, string, double)>  Selection()
+        internal List<(string, string, double)> Selection()
         {
             var unprocessedSet = new HashSet<string>();
             unprocessedSet.UnionWith(WeightedDirectedGraph.Vertices);
@@ -56,7 +57,7 @@ namespace Glitter
                     if (bound == "CB") lower.Push((net, bound, hight));
                 }
             }
-            var result = new List<(string, string, double)> ();
+            var result = new List<(string, string, double)>();
             while (upper.Count() != 0)
             {
                 result.Add(upper.Dequeue());
@@ -255,8 +256,7 @@ namespace Glitter
         private void AddEdgeWeightedDirectedGraph(Edge removeEdge, (string Source, string Target) addedge)//いい名前がない
         {
             WeightedUndirectedGraph.RemoveEdge(removeEdge);
-            Edge edge;
-            WeightedDirectedGraph.TryGetEdge(addedge.Source, addedge.Target, out edge);
+            WeightedDirectedGraph.TryGetEdge(addedge.Source, addedge.Target, out Edge edge);
             if (edge == null)//this is new edge
             {
                 edge = new Edge($"net{addedge.Source}{addedge.Target}", addedge.Source, addedge.Target, removeEdge.Weight);
@@ -272,7 +272,7 @@ namespace Glitter
 
         private double MinSeparation(string i, string j)
         {
-            return Constant.minSpacing + wires[i].horizontal / 2 +wires[j].horizontal / 2;
+            return Constant.minSpacing + wires[i].horizontal / 2 + wires[j].horizontal / 2;
         }
 
         private void ProcessNodes(IEnumerable<string> netName, string direction)
@@ -281,8 +281,7 @@ namespace Glitter
             {
                 foreach (var net in netName)
                 {
-                    var removeEdges = weightedUndirectedGraph.Edges.Where(a => a.Target == net || a.Source == net);
-                    foreach (var removeEdge in removeEdges)
+                    foreach (var removeEdge in new ConcurrentBag<Edge>(weightedUndirectedGraph.Edges.Where(a => a.Target == net || a.Source == net)))
                     {
                         var source = removeEdge.Target == net ? removeEdge.Source : removeEdge.Target;
                         AddEdgeWeightedDirectedGraph(removeEdge, (source, net));
@@ -293,8 +292,7 @@ namespace Glitter
             {
                 foreach (var net in netName)
                 {
-                    var removeEdges = weightedUndirectedGraph.Edges.Where(a => a.Target == net || a.Source == net);
-                    foreach (var removeEdge in removeEdges)
+                    foreach (var removeEdge in new ConcurrentBag<Edge>(weightedUndirectedGraph.Edges.Where(a => a.Target == net || a.Source == net)))
                     {
                         var target = removeEdge.Source == net ? removeEdge.Target : removeEdge.Source;
                         AddEdgeWeightedDirectedGraph(removeEdge, (net, target));
