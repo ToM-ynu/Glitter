@@ -109,30 +109,34 @@ namespace Glitter
         private void CalcLocalMaximumDensity()
         {
             var boundaryClearance = Constant.boundaryClearance;
-            var verticalWireWidth = Constant.VerticalWireWidth;
+            var minSpacing = Constant.minSpacing;
             var terminals = upper.Concat(lower);
             var IMOS = new Dictionary<double, double>();
             foreach (var net in new HashSet<string>(terminals.Select(a => a.net)))
             {
+                var horizontalWidth = wires[net].horizontal + minSpacing;
+                var leftWireWidth = (wires[net].upper + minSpacing) / 2;
+                var rightWireWidth = (wires[net].lower + minSpacing) / 2;
                 var foo = terminals.Where(a => a.net == net);
-                var min = foo.Min(a => a.xAxis) - verticalWireWidth / 2;
-                var max = foo.Max(a => a.xAxis) + verticalWireWidth / 2;
-                if (IMOS.ContainsKey(min))
+                var left = foo.Min(a => a.xAxis) - leftWireWidth;
+                var right = foo.Max(a => a.xAxis) + rightWireWidth;
+                if (IMOS.ContainsKey(left))
                 {
-                    IMOS[min] += wires[net].horizontal;
+                    IMOS[left] += horizontalWidth;
                 }
                 else
                 {
-                    IMOS[min] = wires[net].horizontal;
+                    IMOS[left] = horizontalWidth;
                 }
 
-                if (IMOS.ContainsKey(max))
+                if (IMOS.ContainsKey(right))
                 {
-                    IMOS[max] += -wires[net].horizontal;
+                    IMOS[right] += -horizontalWidth;
                 }
                 else
                 {
-                    IMOS[max] = -wires[net].horizontal;
+                    IMOS[right] = -horizontalWidth;
+                    ;
                 }
             }
 
@@ -147,10 +151,13 @@ namespace Glitter
             LocalMaximumDensity = new Dictionary<string, double>();
             foreach (var net in new HashSet<string>(terminals.Select(a => a.net)))
             {
+                var horizontalWidth = wires[net].horizontal + minSpacing;
+                var leftWireWidth = (wires[net].upper + minSpacing) / 2;
+                var rightWireWidth = (wires[net].lower + minSpacing) / 2;
                 var foo = terminals.Where(a => a.net == net);
-                var min = foo.Min(a => a.xAxis) - verticalWireWidth / 2;
+                var min = foo.Min(a => a.xAxis) - leftWireWidth;
                 var minIndex = temp.FindIndex(a => a.Key == min);
-                var max = foo.Max(a => a.xAxis) + verticalWireWidth / 2;
+                var max = foo.Max(a => a.xAxis) + rightWireWidth;
                 var maxIndex = temp.FindIndex(a => a.Key == max);
                 //min~max間での最大Valueを探せば良い。
                 var density = temp.GetRange(minIndex, Math.Abs(maxIndex - minIndex)).Select(a => a.Value).Max();
