@@ -55,6 +55,7 @@ namespace Glitter
             Console.WriteLine(channelHeight);
 
             Result = new List<(string, double)>();
+            Result = glitter_result.Select(a => (a.Item1, a.Item2 == "CB" ? channelHeight - a.Item3 : a.Item3)).ToList();
 
             calc = new CalcLength(upper, lower, Result, channelHeight, wires);
             foreach (var (a, b) in Result)

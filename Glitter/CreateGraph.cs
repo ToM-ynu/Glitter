@@ -95,7 +95,7 @@ namespace Glitter
                 for (int j = i + 1; j < terminalSections.Count; j++)
                 {
                     var target = terminalSections[j];
-                    var weight = Constant.minSpacing + wires[source.net].horizontal / 2 + wires[target.net].horizontal / 2;
+                    var weight = Constant.minSpacing + wires[source.net].horizontal / 2.0 + wires[target.net].horizontal / 2.0;
                     if (IsInside((target.min, target.max), (source.min, source.max)))
                     {
                         var temp =
