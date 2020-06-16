@@ -78,7 +78,7 @@ namespace Glitter
 
     }
 
-    class Inductance
+    public class Inductance
     {
         int width;
         double value;

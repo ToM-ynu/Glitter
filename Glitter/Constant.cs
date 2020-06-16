@@ -17,7 +17,6 @@ namespace Glitter
     {
 
         internal const double boundaryClearance = 3;
-        internal const double VerticalWireWidth = 10;
 
         internal const int minSpacing = 3;
     }

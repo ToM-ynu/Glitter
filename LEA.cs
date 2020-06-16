@@ -123,7 +123,7 @@ namespace Glitter
                 "VCG".WriteLine();
                 verticalGraph.Edges.ToString<Edge>().Write();
                 Console.WriteLine("This is non-DAG graph. By LEA, there is no solution.");
-                Environment.Exit(1);
+                throw new InvalidDataException("This is non-DAG graph");
 
             }
         }

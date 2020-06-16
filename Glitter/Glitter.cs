@@ -18,7 +18,7 @@ namespace Glitter
     {
         CreateGraph graphs;
         Dictionary<string, (int upper, int lower, int horizontal)> wires;
-        public double channelHight;
+        public double channelHeight;
         private List<(string, double)> result;
         public List<(string, double)> Result { get => result; private set => result = value; }
         private IEnumerable<Terminal> upper, lower;
@@ -43,15 +43,20 @@ namespace Glitter
             Console.WriteLine("Returned WCG");
             selection.WeightedDirectedGraph.Edges.ToString<Edge>(format: "{0}\n", end: "", begin: "").Write();
 
-            Console.WriteLine("Channel Hight");
-            var channelHight = CreateChainWeight.Ancestor(selection.WeightedDirectedGraph)["Bot"];
-            this.channelHight = channelHight;
-            Console.WriteLine(channelHight);
+            Console.WriteLine("Routing Order is");
+            var routingOrder = selection.WeightedDirectedGraph.TopologicalSort().Where(a => a != "Top" && a != "Bot");
+            routingOrder.ToString<string>().Write();
+            Console.WriteLine("Routing Height(from top boundary) is");
+            routingOrder.Select(a => CreateChainWeight.Ancestor(selection.WeightedDirectedGraph)[a]).ToString<double>().Write();
+
+            Console.WriteLine("Channel Height");
+            var channelHeight = CreateChainWeight.Ancestor(selection.WeightedDirectedGraph)["Bot"];
+            this.channelHeight = channelHeight;
+            Console.WriteLine(channelHeight);
 
             Result = new List<(string, double)>();
-            Result = glitter_result.Select(a => (a.Item1, a.Item2 == "CB" ? channelHight - a.Item3 : a.Item3)).ToList();
 
-            calc = new CalcLength(upper, lower, Result, channelHight, wires);
+            calc = new CalcLength(upper, lower, Result, channelHeight, wires);
             foreach (var (a, b) in Result)
             {
                 Console.Write(calc.GetLength(a));
@@ -82,26 +87,30 @@ namespace Glitter
             }
         }
 
-        public void WriteInductanceCSV()
+        public IEnumerable<(string, (double upper, double horizontal, double lower))> WriteInductanceCSV()
         {
+            var temp = Result.OrderBy(a => a.Item1).Select(a => (a.Item1, calc.GetInductance(a.Item1)));
             using (var streamWriter = new StreamWriter("InductanceResult.csv"))
             {
-                foreach (var (net, (upper, horizontal, lower)) in Result.OrderBy(a => a.Item1).Select(a => (a.Item1, calc.GetInductance(a.Item1))))
+                foreach (var (net, (upper, horizontal, lower)) in temp)
                 {
                     streamWriter.Write($"{net},{upper},{horizontal},{lower}\n");
                 }
             }
+            return temp;
         }
 
-        public void WriteSegmentLengthCSV()
+        public IEnumerable<(string, (double upper, double horizontal, double lower))> WriteSegmentLengthCSV()
         {
+            var temp = Result.OrderBy(a => a.Item1).Select(a => (a.Item1, calc.GetLength(a.Item1)));
             using (var streamWriter = new StreamWriter("SegmentLength.csv"))
             {
-                foreach (var (net, (upper, horizontal, lower)) in Result.OrderBy(a => a.Item1).Select(a => (a.Item1, calc.GetLength(a.Item1))))
+                foreach (var (net, (upper, horizontal, lower)) in temp)
                 {
                     streamWriter.Write($"{net},{upper},{horizontal},{lower}\n");
                 }
             }
+            return temp;
         }
     }
 }

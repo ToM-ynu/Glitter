@@ -42,19 +42,20 @@ namespace Glitter
 
         internal List<(string, string, double)> Selection()
         {
-            var unprocessedSet = new HashSet<string>();
-            unprocessedSet.UnionWith(WeightedDirectedGraph.Vertices);
+            var unprocessedSet = new HashSet<string>(WeightedDirectedGraph.Vertices);
             var upper = new Queue<(string, string, double)>();
             var lower = new Stack<(string, string, double)>();
 
             while (unprocessedSet.Count() != 2)
             {
-                NodeSelection(unprocessedSet);
+                var flag=NodeSelection(unprocessedSet);
                 var order = EdgeSelection(unprocessedSet);
                 foreach (var (net, bound, hight) in order)
                 {
                     if (bound == "CT") upper.Enqueue((net, bound, hight));
-                    if (bound == "CB") lower.Push((net, bound, hight));
+                    else if (bound == "CB") lower.Push((net, bound, hight));
+                    else throw new InvalidDataException();
+                    unprocessedSet.Remove(net);
                 }
             }
             var result = new List<(string, string, double)>();
@@ -107,7 +108,7 @@ namespace Glitter
 
         }
 
-        private List<(string, string, double)> EdgeSelection(HashSet<string> unprocessedSet)
+        private List<(string, string, double)> EdgeSelection(IReadOnlyCollection<string> unprocessedSet)
         {
             var result = new List<(string, string, double)>();
             var ancw = new Dictionary<string, double>(CreateChainWeight.Ancestor(WeightedDirectedGraph).Where(b => unprocessedSet.Contains(b.Key)));
@@ -149,9 +150,9 @@ namespace Glitter
                     ///DO PROCESSSSS
                     //these vertices are incoming direction
                     ProcessNodes(processPT, "outgoing");
-                    unprocessedSet.ExceptWith(processPT);
+                    var temp = unprocessedSet.Except(processPT);
                     //update CT
-                    CT = CT.Where(a => unprocessedSet.Contains(a.Key));
+                    CT = CT.Where(a => temp.Contains(a.Key));
                     foreach (var item in processPT)
                     {
                         result.Add((item, "CT", ancw[item]));
@@ -182,9 +183,9 @@ namespace Glitter
                     ///DO PROCESSSSS
                     //these vertices are incoming direction
                     ProcessNodes(processPB, "incoming");
-                    unprocessedSet.ExceptWith(processPB);
+                    var temp = unprocessedSet.Except(processPB);
                     //update CT
-                    CB = CB.Where(a => unprocessedSet.Contains(a.Key));
+                    CB = CB.Where(a => temp.Contains(a.Key));
                     foreach (var item in processPB)
                     {
                         result.Add((item, "CB", desw[item]));

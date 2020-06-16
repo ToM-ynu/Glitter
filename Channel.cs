@@ -17,23 +17,11 @@ namespace Glitter
         string wireWidthCSVPath;
         IEnumerable<Terminal> upperSide, lowerSide;
         Dictionary<string, (int upper, int lower, int horizontal)> wires;
-        ///for Constrain-LEA
-        public Channel(string channelCSVPath)
-        {
-            this.channelCSVPath = channelCSVPath;
-            upperSide = new List<Terminal>();
-            lowerSide = new List<Terminal>();
-            using (var streamReader = new StreamReader(channelCSVPath))
-            using (var csv = new CsvReader(streamReader, CultureInfo.InvariantCulture))
-            {
-                csv.Configuration.HasHeaderRecord = false; // When csv has no index row.
-                var result = csv.GetRecords<CSVStruct>().ToList();
-                upperSide = result.Where(a => a.ul == "u").Select(b => new Terminal(b));
-                lowerSide = result.Where(a => a.ul == "l").Select(b => new Terminal(b));
 
-            }
-            var hoge = new LeftEdgeAlgorithm(upperSide, lowerSide);
-        }
+        public IEnumerable<(string, (double upper, double horizontal, double lower))> WireLenghtResult { get; private set; }
+        public IEnumerable<(string, (double upper, double horizontal, double lower))> InductanceResult { get; private set; }
+
+
         ///for glitter
         public Channel(string channelCSVPath, string wireWidthCSVPath)
         {
@@ -65,8 +53,8 @@ namespace Glitter
             var glitter = new Glitter(upperSide, lowerSide, wires);
             glitter.Calc();
             glitter.WriteGlitterCSV();
-            glitter.WriteInductanceCSV();
-            glitter.WriteSegmentLengthCSV();
+            InductanceResult = glitter.WriteInductanceCSV();
+            WireLenghtResult = glitter.WriteSegmentLengthCSV();
         }
 
         // for internal call of Glitter
