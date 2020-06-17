@@ -46,16 +46,15 @@ namespace Glitter
             Console.WriteLine("Routing Order is");
             var routingOrder = selection.WeightedDirectedGraph.TopologicalSort().Where(a => a != "Top" && a != "Bot");
             routingOrder.ToString<string>().Write();
+            HeightOfHorizontalWire = new List<(string, double)>();
             Console.WriteLine("Routing Height(from top boundary) is");
-            routingOrder.Select(a => CreateChainWeight.Ancestor(selection.WeightedDirectedGraph)[a]).ToString<double>().Write();
-
+            HeightOfHorizontalWire = routingOrder.Select(a => (a, CreateChainWeight.Ancestor(selection.WeightedDirectedGraph)[a])).ToList();
+            HeightOfHorizontalWire.Select(a => a.Item2).ToString<double>().Write();
             Console.WriteLine("Channel Height");
             var channelHeight = CreateChainWeight.Ancestor(selection.WeightedDirectedGraph)["Bot"];
             this.channelHeight = channelHeight;
             Console.WriteLine(channelHeight);
 
-            HeightOfHorizontalWire = new List<(string, double)>();
-            HeightOfHorizontalWire = glitter_result.Select(a => (a.Item1, a.Item2 == "CB" ? channelHeight - a.Item3 : a.Item3)).ToList();
 
             calc = new CalcLength(upper, lower, HeightOfHorizontalWire, channelHeight, wires);
             foreach (var (a, b) in HeightOfHorizontalWire)

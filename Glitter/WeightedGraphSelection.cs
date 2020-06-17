@@ -48,12 +48,12 @@ namespace Glitter
 
             while (unprocessedSet.Count() != 2)
             {
-                var flag=NodeSelection(unprocessedSet);
+                var flag = NodeSelection(unprocessedSet);
                 var order = EdgeSelection(unprocessedSet);
-                foreach (var (net, bound, hight) in order)
+                foreach (var (net, bound, height) in order)
                 {
-                    if (bound == "CT") upper.Enqueue((net, bound, hight));
-                    else if (bound == "CB") lower.Push((net, bound, hight));
+                    if (bound == "CT") upper.Enqueue((net, bound, height));
+                    else if (bound == "CB") lower.Push((net, bound, height));
                     else throw new InvalidDataException();
                     unprocessedSet.Remove(net);
                 }
@@ -108,9 +108,9 @@ namespace Glitter
 
         }
 
-        private List<(string, string, double)> EdgeSelection(IReadOnlyCollection<string> unprocessedSet)
+        private List<(string net, string CT_CB, double ancw)> EdgeSelection(IReadOnlyCollection<string> unprocessedSet)
         {
-            var result = new List<(string, string, double)>();
+            var result = new List<(string net, string CT_CB, double ancw)>();
             var ancw = new Dictionary<string, double>(CreateChainWeight.Ancestor(WeightedDirectedGraph).Where(b => unprocessedSet.Contains(b.Key)));
             var minAncw = ancw.Select(b => b.Value).Min();
             //unprocessed nodes with minimum ancw
@@ -195,7 +195,7 @@ namespace Glitter
             return result;
         }
 
-        private (double, string, string) CalcLabel(string Source, string Target, Dictionary<string, double> ancw, Dictionary<string, double> decw)
+        private (double Weight, string Source, string Target) CalcLabel(string Source, string Target, Dictionary<string, double> ancw, Dictionary<string, double> decw)
         {
             ///論文にはサイクルができないようにするって書いてあるけど、無向グラフがあったらどうやってもサイクルできちゃうので、
             ///(VCG+すでに向きを割り当てたEdgeで、)サイクルができないようにするってことでいいのか？？？？多分そう。
