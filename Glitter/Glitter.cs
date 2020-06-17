@@ -20,7 +20,7 @@ namespace Glitter
         Dictionary<string, (int upper, int lower, int horizontal)> wires;
         public double channelHeight;
         private List<(string, double)> result;
-        public List<(string, double)> Result { get => result; private set => result = value; }
+        public List<(string, double)> HeightOfHorizontalWire { get => result; private set => result = value; }
         private IEnumerable<Terminal> upper, lower;
         internal CalcLength calc;
 
@@ -54,11 +54,11 @@ namespace Glitter
             this.channelHeight = channelHeight;
             Console.WriteLine(channelHeight);
 
-            Result = new List<(string, double)>();
-            Result = glitter_result.Select(a => (a.Item1, a.Item2 == "CB" ? channelHeight - a.Item3 : a.Item3)).ToList();
+            HeightOfHorizontalWire = new List<(string, double)>();
+            HeightOfHorizontalWire = glitter_result.Select(a => (a.Item1, a.Item2 == "CB" ? channelHeight - a.Item3 : a.Item3)).ToList();
 
-            calc = new CalcLength(upper, lower, Result, channelHeight, wires);
-            foreach (var (a, b) in Result)
+            calc = new CalcLength(upper, lower, HeightOfHorizontalWire, channelHeight, wires);
+            foreach (var (a, b) in HeightOfHorizontalWire)
             {
                 Console.Write(calc.GetLength(a));
                 Console.WriteLine(calc.GetInductance(a));
@@ -81,7 +81,7 @@ namespace Glitter
         {
             using (var streamWriter = new StreamWriter("glitterResult.csv"))
             {
-                foreach (var (net, hight) in Result)
+                foreach (var (net, hight) in HeightOfHorizontalWire)
                 {
                     streamWriter.Write($"{net},{hight}\n");
                 }
@@ -90,7 +90,7 @@ namespace Glitter
 
         public IEnumerable<(string, (double upper, double horizontal, double lower))> WriteInductanceCSV()
         {
-            var temp = Result.OrderBy(a => a.Item1).Select(a => (a.Item1, calc.GetInductance(a.Item1)));
+            var temp = HeightOfHorizontalWire.OrderBy(a => a.Item1).Select(a => (a.Item1, calc.GetInductance(a.Item1)));
             using (var streamWriter = new StreamWriter("InductanceResult.csv"))
             {
                 foreach (var (net, (upper, horizontal, lower)) in temp)
@@ -103,7 +103,7 @@ namespace Glitter
 
         public IEnumerable<(string, (double upper, double horizontal, double lower))> WriteSegmentLengthCSV()
         {
-            var temp = Result.OrderBy(a => a.Item1).Select(a => (a.Item1, calc.GetLength(a.Item1)));
+            var temp = HeightOfHorizontalWire.OrderBy(a => a.Item1).Select(a => (a.Item1, calc.GetLength(a.Item1)));
             using (var streamWriter = new StreamWriter("SegmentLength.csv"))
             {
                 foreach (var (net, (upper, horizontal, lower)) in temp)
