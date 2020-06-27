@@ -40,7 +40,7 @@ namespace Glitter
             var selection = new WeightedGraphSelection(weightedGraphs.weightedDirectedGraph, weightedGraphs.weightedUndirectedGraph, graphs.LocalMaximumDensity, wires, graphs.HorizontalGraph);
             var glitter_result = selection.Selection();
             var routingOrder = selection.WeightedDirectedGraph.TopologicalSort().Where(a => a != "Top" && a != "Bot");
-            HeightOfHorizontalWire =new List<(string, double)>(routingOrder.Select(a => (a, CreateChainWeight.Ancestor(selection.WeightedDirectedGraph)[a])).ToList());
+            HeightOfHorizontalWire = new List<(string, double)>(routingOrder.Select(a => (a, CreateChainWeight.Ancestor(selection.WeightedDirectedGraph)[a])).ToList());
             var channelHeight = CreateChainWeight.Ancestor(selection.WeightedDirectedGraph)["Bot"];
             this.channelHeight = channelHeight;
             calc = new CalcLength(upper, lower, HeightOfHorizontalWire, channelHeight, wires);
@@ -82,27 +82,33 @@ namespace Glitter
             }
         }
 
-        public IEnumerable<(string, (double upper, double horizontal, double lower))> WriteInductanceCSV()
+        public IEnumerable<(string, (double upper, double horizontal, double lower))> GetInductanceCSV(bool WriteCSV = false)
         {
             var temp = HeightOfHorizontalWire.OrderBy(a => a.Item1).Select(a => (a.Item1, calc.GetInductance(a.Item1)));
-            using (var streamWriter = new StreamWriter("InductanceResult.csv"))
+            if (WriteCSV)
             {
-                foreach (var (net, (upper, horizontal, lower)) in temp)
+                using (var streamWriter = new StreamWriter("InductanceResult.csv"))
                 {
-                    streamWriter.Write($"{net},{upper},{horizontal},{lower}\n");
+                    foreach (var (net, (upper, horizontal, lower)) in temp)
+                    {
+                        streamWriter.Write($"{net},{upper},{horizontal},{lower}\n");
+                    }
                 }
             }
             return temp;
         }
 
-        public IEnumerable<(string, (double upper, double horizontal, double lower))> WriteSegmentLengthCSV()
+        public IEnumerable<(string, (double upper, double horizontal, double lower))> GetSegmentLengthCSV(bool WriteCSV = false)
         {
             var temp = HeightOfHorizontalWire.OrderBy(a => a.Item1).Select(a => (a.Item1, calc.GetLength(a.Item1)));
-            using (var streamWriter = new StreamWriter("SegmentLength.csv"))
+            if (WriteCSV)
             {
-                foreach (var (net, (upper, horizontal, lower)) in temp)
+                using (var streamWriter = new StreamWriter("SegmentLength.csv"))
                 {
-                    streamWriter.Write($"{net},{upper},{horizontal},{lower}\n");
+                    foreach (var (net, (upper, horizontal, lower)) in temp)
+                    {
+                        streamWriter.Write($"{net},{upper},{horizontal},{lower}\n");
+                    }
                 }
             }
             return temp;

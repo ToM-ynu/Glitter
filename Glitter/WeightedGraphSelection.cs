@@ -74,7 +74,7 @@ namespace Glitter
 
         //false で帰ってきたらNodeSelectionがいる。
         //trueで帰ってきたら、Unprocessed nodeがないので終了。
-        private bool NodeSelection(IReadOnlyCollection<string> unprocessedSet)
+        private bool NodeSelection(IReadOnlyCollection<string> unprocessedSet, bool ConsoleOut = false)
         {
             int count = 0;
             while (count++ < 1000)
@@ -96,14 +96,17 @@ namespace Glitter
                 var hoge = LabelList.First();
                 AddEdgeWeightedDirectedGraph(hoge.a, hoge.Item2);
 #if DEBUG
-                Console.Write("Labels\t");
-                LabelList.Select(a => a.Item2).ToString<(double, string, string)>().Write();
-                Console.Write("ANCW\t");
-                ancw.ToString<string, double>().Write();
-                Console.Write("DESW\t");
-                desw.ToString<string, double>().Write();
-                WeightedDirectedGraph.Edges.ToString<Edge>(format: "{0}\n", end: "", begin: "").Write();
-                //WeightedUndirectedGraph.Edges.ToString<Edge>(format: "{0}\n", end: "", begin: "").Write();
+                if (ConsoleOut == true)
+                {
+                    Console.Write("Labels\t");
+                    LabelList.Select(a => a.Item2).ToString<(double, string, string)>().Write();
+                    Console.Write("ANCW\t");
+                    ancw.ToString<string, double>().Write();
+                    Console.Write("DESW\t");
+                    desw.ToString<string, double>().Write();
+                    WeightedDirectedGraph.Edges.ToString<Edge>(format: "{0}\n", end: "", begin: "").Write();
+                    //WeightedUndirectedGraph.Edges.ToString<Edge>(format: "{0}\n", end: "", begin: "").Write();
+                }
 #endif
             }
             throw new Exception($"Beyond safety loop count {count}. If this value is not enough. Please change this limit");

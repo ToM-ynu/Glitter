@@ -53,8 +53,8 @@ namespace Glitter
             var glitter = new Glitter(upperSide, lowerSide, wires);
             glitter.Calc();
             glitter.WriteGlitterCSV();
-            InductanceResult = glitter.WriteInductanceCSV();
-            WireLenghtResult = glitter.WriteSegmentLengthCSV();
+            InductanceResult = glitter.GetInductanceCSV();
+            WireLenghtResult = glitter.GetSegmentLengthCSV();
         }
 
         // for internal call of Glitter
