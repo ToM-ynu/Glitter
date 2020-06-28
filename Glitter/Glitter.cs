@@ -24,6 +24,8 @@ namespace Glitter
         private IEnumerable<Terminal> upper, lower;
         internal CalcLength calc;
 
+        public bool IsDAG=false;
+
 
         public Glitter(IEnumerable<Terminal> upper, IEnumerable<Terminal> lower, Dictionary<string, (int upper, int lower, int horizontal)> wires)
         {
@@ -31,7 +33,7 @@ namespace Glitter
             this.lower = lower;
             this.wires = wires;
             graphs = new CreateGraph(upper, lower, wires);
-
+            IsDAG = graphs.IsDAG;
         }
 
         public void Calc(bool ConsoleOut = false)
@@ -84,7 +86,7 @@ namespace Glitter
 
         public IEnumerable<(string, (double upper, double horizontal, double lower))> GetInductanceCSV(bool WriteCSV = false)
         {
-            var temp = HeightOfHorizontalWire.OrderBy(a => a.Item1).Select(a => (a.Item1, calc.GetInductance(a.Item1)));
+            var temp = wires.Select(a => (a.Key, calc.GetInductance(a.Key)));
             if (WriteCSV)
             {
                 using (var streamWriter = new StreamWriter("InductanceResult.csv"))
@@ -98,9 +100,9 @@ namespace Glitter
             return temp;
         }
 
-        public IEnumerable<(string, (double upper, double horizontal, double lower))> GetSegmentLengthCSV(bool WriteCSV = false)
+        public IEnumerable<(string net, (double upper, double horizontal, double lower) length)> GetSegmentLengthCSV(bool WriteCSV = false)
         {
-            var temp = HeightOfHorizontalWire.OrderBy(a => a.Item1).Select(a => (a.Item1, calc.GetLength(a.Item1)));
+            var temp = wires.Select(a => (a.Key, calc.GetLength(a.Key)));
             if (WriteCSV)
             {
                 using (var streamWriter = new StreamWriter("SegmentLength.csv"))

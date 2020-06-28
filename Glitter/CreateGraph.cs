@@ -28,6 +28,8 @@ namespace Glitter
         private double maxDensity;
         private Dictionary<string, double> localMaximumDensity;
 
+        internal bool IsDAG = false;
+
         internal CreateGraph(IEnumerable<Terminal> upper, IEnumerable<Terminal> lower, Dictionary<string, (int upper, int lower, int horizontal)> wires)
         {
             this.upper = upper;
@@ -35,12 +37,15 @@ namespace Glitter
             this.wires = wires;
             VerticalGraph = new Graph();
             HorizontalGraph = new Graph();
-            CreateVerticalGraph();
-            CreateHorizontalGraph();
-            CalcLocalMaximumDensity();
+            IsDAG = CreateVerticalGraph();
+            if (!IsDAG)
+            {
+                CreateHorizontalGraph();
+                CalcLocalMaximumDensity();
+            }
         }
 
-        private void CreateVerticalGraph()
+        private bool CreateVerticalGraph()
         {
             var nets = new HashSet<string>(upper.Select(a => a.net).Concat(lower.Select(b => b.net)));
             VerticalGraph.AddVertexRange(nets);
@@ -69,13 +74,12 @@ namespace Glitter
             }
             catch (NonAcyclicGraphException)
             {
-
-                Console.WriteLine("VCG");
-                VerticalGraph.Edges.ToString<Edge>(format: "{0}\n", end: "", begin: "").Write();
-                Console.WriteLine("This is non-DAG graph. By LEA, there is no solution.");
-                Environment.Exit(1);
-
+                //Console.WriteLine("VCG");
+                //VerticalGraph.Edges.ToString<Edge>(format: "{0}\n", end: "", begin: "").Write();
+                //Console.WriteLine("This is non-DAG graph. By LEA, there is no solution.");
+                return true;
             }
+            return false;
         }
         private void CreateHorizontalGraph()
         {
