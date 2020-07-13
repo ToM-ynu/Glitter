@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using CsvHelper;
 using QuickGraph;
@@ -17,7 +18,7 @@ namespace Glitter
     {
         internal Graph VerticalGraph { get => verticalGraph; private set => verticalGraph = value; }
         internal Graph HorizontalGraph { get => horizontalGraph; private set => horizontalGraph = value; }
-        Dictionary<string, (int upper, int lower, int horizontal)> wires;
+        Dictionary<string, (int upper, int horizontal, int lower)> wires;
         private IEnumerable<Terminal> upper;
         private IEnumerable<Terminal> lower;
         internal double MaxDensity { get => maxDensity; private set => maxDensity = value; }
@@ -30,7 +31,7 @@ namespace Glitter
 
         internal bool IsDAG = false;
 
-        internal CreateGraph(IEnumerable<Terminal> upper, IEnumerable<Terminal> lower, Dictionary<string, (int upper, int lower, int horizontal)> wires)
+        internal CreateGraph(IEnumerable<Terminal> upper, IEnumerable<Terminal> lower, Dictionary<string, (int upper, int horizonal, int lower)> wires)
         {
             this.upper = upper;
             this.lower = lower;
@@ -57,6 +58,7 @@ namespace Glitter
                 if (verticalColisionList.Count == 0) continue;
                 else
                 {
+                    var hoge = IsVerticalColision(upperTerminal, verticalColisionList.First());
                     foreach (var colisionUpper in verticalColisionList)
                     {
                         if (upperTerminal.net == colisionUpper.net) continue; //avoid self-loops
@@ -74,9 +76,9 @@ namespace Glitter
             }
             catch (NonAcyclicGraphException)
             {
-                //Console.WriteLine("VCG");
-                //VerticalGraph.Edges.ToString<Edge>(format: "{0}\n", end: "", begin: "").Write();
-                //Console.WriteLine("This is non-DAG graph. By LEA, there is no solution.");
+                Console.WriteLine("VCG");
+                VerticalGraph.Edges.ToString<Edge>(format: "{0}\n", end: "", begin: "").Write();
+                Console.WriteLine("This is non-DAG graph. By LEA, there is no solution.");
                 return true;
             }
             return false;
@@ -181,11 +183,11 @@ namespace Glitter
 
         private bool IsVerticalColision(Terminal upper, Terminal lower)
         {
-            var temp = new List<(double, double)>();
-            temp.Add((upper.xAxis - (Constant.boundaryClearance + wires[upper.net].upper) / 2, upper.xAxis + (Constant.boundaryClearance + wires[upper.net].upper) / 2));
-            temp.Add((lower.xAxis - (Constant.boundaryClearance + wires[lower.net].lower) / 2, lower.xAxis + (Constant.boundaryClearance + wires[lower.net].lower) / 2));
+            var temp = new List<(decimal, decimal)>();
+            temp.Add((upper.xAxis - (Constant.boundaryClearanceDecimal + wires[upper.net].upper) / 2, upper.xAxis + (Constant.boundaryClearanceDecimal + wires[upper.net].upper) / 2));
+            temp.Add((lower.xAxis - (Constant.boundaryClearanceDecimal + wires[lower.net].lower) / 2, lower.xAxis + (Constant.boundaryClearanceDecimal + wires[lower.net].lower) / 2));
             temp.Sort();
-            return temp[0].Item1 <= temp[1].Item1 && temp[1].Item1 <= temp[0].Item2;
+            return temp[0].Item1 < temp[1].Item1 && temp[1].Item1 < temp[0].Item2;
         }
     }
 

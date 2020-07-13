@@ -8,7 +8,7 @@ namespace Glitter
         internal Graph weightedDirectedGraph { get; }
         internal Graph weightedUndirectedGraph { get; }
 
-        internal CreateWeightedGraph(Graph verticalGraph, Graph horizontalGraph, Dictionary<string, (int upper, int lower, int horizontal)> wires)
+        internal CreateWeightedGraph(Graph verticalGraph, Graph horizontalGraph, Dictionary<string, (int upper, int horizontal, int lower)> wires)
         {
             weightedDirectedGraph = new Graph();
             weightedUndirectedGraph = new Graph();

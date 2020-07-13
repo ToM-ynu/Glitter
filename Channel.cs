@@ -16,7 +16,7 @@ namespace Glitter
         string channelCSVPath;
         string wireWidthCSVPath;
         IEnumerable<Terminal> upperSide, lowerSide;
-        Dictionary<string, (int upper, int lower, int horizontal)> wires;
+        Dictionary<string, (int upper, int horizonal, int lower)> wires;
 
         public IEnumerable<(string, (double upper, double horizontal, double lower))> WireLenghtResult { get; private set; }
         public IEnumerable<(string, (double upper, double horizontal, double lower))> InductanceResult { get; private set; }
@@ -44,9 +44,9 @@ namespace Glitter
             {
                 csv.Configuration.HasHeaderRecord = false;
                 wires =
-                new Dictionary<string, (int upper, int lower, int horizontal)>
+                new Dictionary<string, (int upper, int horizonal, int lower)>
                 (csv.GetRecords<wireWidth>()
-                .Select(a => new KeyValuePair<string, (int upper, int lower, int horizontal)>(a.net, (a.widthUpper, a.widthLower, a.widthHorizontal))));
+                .Select(a => new KeyValuePair<string, (int upper, int horizonal, int lower)>(a.net, (a.widthUpper, a.widthLower, a.widthHorizontal))));
 
             }
 
@@ -62,7 +62,7 @@ namespace Glitter
         {
             upperSide = new List<Terminal>();
             lowerSide = new List<Terminal>();
-            this.wires = new Dictionary<string, (int upper, int lower, int horizontal)>();
+            this.wires = new Dictionary<string, (int upper, int horizonal, int lower)>();
 
             var result = channel.Select(a => new CSVStruct(a));
             upperSide = result.Where(a => a.ul == "u").Select(b => new Terminal(b)).OrderBy(c => c.xAxis);

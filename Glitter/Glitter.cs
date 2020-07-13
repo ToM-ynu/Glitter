@@ -17,17 +17,17 @@ namespace Glitter
     public class Glitter
     {
         CreateGraph graphs;
-        Dictionary<string, (int upper, int lower, int horizontal)> wires;
+        Dictionary<string, (int upper, int horizontal, int lower)> wires;
         public double channelHeight;
         private List<(string, double)> result;
         public List<(string, double)> HeightOfHorizontalWire { get => result; private set => result = value; }
         private IEnumerable<Terminal> upper, lower;
         internal CalcLength calc;
 
-        public bool IsDAG=false;
+        public bool IsDAG = false;
 
 
-        public Glitter(IEnumerable<Terminal> upper, IEnumerable<Terminal> lower, Dictionary<string, (int upper, int lower, int horizontal)> wires)
+        public Glitter(IEnumerable<Terminal> upper, IEnumerable<Terminal> lower, Dictionary<string, (int upper, int horizontal, int lower)> wires)
         {
             this.upper = upper;
             this.lower = lower;

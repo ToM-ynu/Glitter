@@ -21,7 +21,7 @@ namespace Glitter
         Dictionary<string, int> upper, lower;
         Dictionary<string, double> horizontalHight;
 
-        Dictionary<string, (int upper, int lower, int horizontal)> wires;
+        Dictionary<string, (int upper, int horizontal, int lower)> wires;
 
 
         double channelHight;
@@ -31,7 +31,7 @@ namespace Glitter
 
         Dictionary<int, double> verticalInductanceDictionary { get; set; }
         Dictionary<int, double> horizontalInductanceDictionary { get; set; }
-        internal CalcLength(IEnumerable<Terminal> upper, IEnumerable<Terminal> lower, IEnumerable<(string net, double hight)> horizontalHight, double channelHight, Dictionary<string, (int upper, int lower, int horizontal)> wires)
+        public CalcLength(IEnumerable<Terminal> upper, IEnumerable<Terminal> lower, IEnumerable<(string net, double hight)> horizontalHight, double channelHight, Dictionary<string, (int upper, int horizontal, int lower)> wires)
         {
             this.upper = new Dictionary<string, int>(upper.Select(a => new KeyValuePair<string, int>(a.net, a.xAxis)));
             this.lower = new Dictionary<string, int>(lower.Select(a => new KeyValuePair<string, int>(a.net, a.xAxis)));
@@ -39,14 +39,14 @@ namespace Glitter
             this.channelHight = channelHight;
             this.wires = wires;
 
-            using (var srHorizontalInductace = new StreamReader("Reference/HorizontalInductanceTable.csv"))
+            using (var srHorizontalInductace = new StreamReader(@"C:\Users\tomo8\Source\Repos\yoshikawa-laboratory\aqfp-topdown\Glitter\Reference\HorizontalInductanceTable.csv"))
             using (var csv = new CsvReader(srHorizontalInductace, CultureInfo.InvariantCulture))
             {
                 csv.Configuration.HasHeaderRecord = false; // When csv has no index row.
                 horizontalInductanceDictionary = new Dictionary<int, double>(csv.GetRecords<Inductance>().Select(a => new KeyValuePair<int, double>(a.Width, a.Value)));
             }
 
-            using (var srHorizontalInductace = new StreamReader("Reference/VerticalInductanceTable.csv"))
+            using (var srHorizontalInductace = new StreamReader(@"C:\Users\tomo8\Source\Repos\yoshikawa-laboratory\aqfp-topdown\Glitter\Reference\VerticalInductanceTable.csv"))
             using (var csv = new CsvReader(srHorizontalInductace, CultureInfo.InvariantCulture))
             {
                 csv.Configuration.HasHeaderRecord = false; // When csv has no index row.
@@ -64,15 +64,13 @@ namespace Glitter
             b = Math.Abs(upper[net] - lower[net]);
             return (a, b, c);
         }
-        internal (double upper, double horizontal, double lower) GetInductance(string net)
+        public (double upper, double horizontal, double lower) GetInductance(string net)
         {
             var result = GetLength(net);
-            return (
-                result.upper * verticalInductanceDictionary[wires[net].upper],
-                result.horizontal * horizontalInductanceDictionary[wires[net].horizontal],
-                result.lower * verticalInductanceDictionary[wires[net].lower]);
-
-
+            var upper = result.upper * verticalInductanceDictionary[wires[net].upper];
+            var horizontal = result.horizontal * horizontalInductanceDictionary[wires[net].horizontal];
+            var lower = result.lower * verticalInductanceDictionary[wires[net].lower];
+            return (upper, horizontal, lower);
         }
 
 

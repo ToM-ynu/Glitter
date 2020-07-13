@@ -16,9 +16,11 @@ namespace Glitter
     internal static class Constant
     {
 
-        internal const double boundaryClearance = 3;
+        internal const double boundaryClearance = 2.5;
 
-        internal const int minSpacing = 3;
+        internal const decimal boundaryClearanceDecimal = 2.5M;
+
+        internal const int minSpacing = 4;
     }
 
 }
