@@ -18,8 +18,8 @@ namespace Glitter
         IEnumerable<Terminal> upperSide, lowerSide;
         Dictionary<string, (int upper, int horizonal, int lower)> wires;
 
-        public IEnumerable<(string, (double upper, double horizontal, double lower))> WireLenghtResult { get; private set; }
-        public IEnumerable<(string, (double upper, double horizontal, double lower))> InductanceResult { get; private set; }
+        public IEnumerable<(string, List<((string upper, string lower), (double upper, double horizontal, double lower))>)> WireLenghtResult { get; private set; }
+        public IEnumerable<(string, List<((string upper, string lower), (double upper, double horizontal, double lower))>)> InductanceResult { get; private set; }
 
 
         ///for glitter
@@ -34,7 +34,7 @@ namespace Glitter
             using (var csv = new CsvReader(srChannelCSVPath, CultureInfo.InvariantCulture))
             {
                 csv.Configuration.HasHeaderRecord = false; // When csv has no index row.
-                var result = csv.GetRecords<CSVStruct>().ToList();
+                var result = csv.GetRecords<CSVTerminal>().ToList();
                 upperSide = result.Where(a => a.ul == "u").Select(b => new Terminal(b)).OrderBy(c => c.xAxis);
                 lowerSide = result.Where(a => a.ul == "l").Select(b => new Terminal(b)).OrderBy(c => c.xAxis);
 
@@ -53,8 +53,8 @@ namespace Glitter
             var glitter = new Glitter(upperSide, lowerSide, wires);
             glitter.Calc();
             glitter.WriteGlitterCSV();
-            InductanceResult = glitter.GetInductanceCSV();
-            WireLenghtResult = glitter.GetSegmentLengthCSV();
+            InductanceResult = glitter.GetInductanceEnum();
+            WireLenghtResult = glitter.GetSegmentLengthEnum();
         }
 
         // for internal call of Glitter
@@ -64,7 +64,7 @@ namespace Glitter
             lowerSide = new List<Terminal>();
             this.wires = new Dictionary<string, (int upper, int horizonal, int lower)>();
 
-            var result = channel.Select(a => new CSVStruct(a));
+            var result = channel.Select(a => new CSVTerminal(a));
             upperSide = result.Where(a => a.ul == "u").Select(b => new Terminal(b)).OrderBy(c => c.xAxis);
             lowerSide = result.Where(a => a.ul == "l").Select(b => new Terminal(b)).OrderBy(c => c.xAxis);
             throw new NotImplementedException();
@@ -72,25 +72,27 @@ namespace Glitter
         }
     }
 
-    public class CSVStruct
+    public class CSVTerminal
     {
         public string ul { get; set; }
         public string net { get; set; }
+        public string terminalName { get; set; }
         public int xAxis { get; set; }
         public override string ToString()
         {
-            return $"{ul},{net},{xAxis.ToString()}";
+            return $"{ul},{net},{terminalName},{xAxis.ToString()}";
         }
 
-        public CSVStruct(string str)
+        public CSVTerminal(string str)
         {
             var temp = str.Split(',');
             ul = temp[0];
             net = temp[1];
-            xAxis = int.Parse(temp[2]);
+            terminalName = temp[2];
+            xAxis = int.Parse(temp[3]);
         }
 
-        public CSVStruct()
+        public CSVTerminal()
         {
 
         }
@@ -102,6 +104,7 @@ namespace Glitter
         public int widthUpper { get; set; }
         public int widthHorizontal { get; set; }
         public int widthLower { get; set; }
+
         public override string ToString()
         {
             return $"net:{net},{widthHorizontal}";
@@ -124,28 +127,18 @@ namespace Glitter
     public struct Terminal
     {
         public string net;
+
+        public string terminalName;
         public int xAxis;
-        public Terminal(string net, int xAxis)
-        {
-            this.net = net;
-            this.xAxis = xAxis;
-        }
-
-        public Terminal(string str)
-        {
-
-            var temp = str.Split(',');
-            net = temp[0];
-            xAxis = int.Parse(temp[1]);
-        }
-        public Terminal(CSVStruct cSVStruct)
+        public Terminal(CSVTerminal cSVStruct)
         {
             this.net = cSVStruct.net;
             this.xAxis = cSVStruct.xAxis;
+            terminalName = cSVStruct.terminalName;
         }
         public override string ToString()
         {
-            return $"{net},{xAxis.ToString()}";
+            return $"net:{net}\t name:{terminalName} \t {xAxis.ToString()}";
         }
     }
 }

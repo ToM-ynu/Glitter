@@ -57,10 +57,18 @@ namespace Glitter
                 HeightOfHorizontalWire.Select(a => a.Item2).ToString<double>().Write();
                 Console.WriteLine("Channel Height");
                 Console.WriteLine(channelHeight);
-                foreach (var (a, b) in HeightOfHorizontalWire)
+                foreach (var (net, hight) in HeightOfHorizontalWire)
                 {
-                    Console.Write(calc.GetLength(a));
-                    Console.WriteLine(calc.GetInductance(a));
+                    var foo = calc.GetLengths(net);
+                    foreach (var item in foo)
+                    {
+                        Console.WriteLine(item);
+                    }
+                    var bar = calc.GetInductances(net);
+                    foreach (var item in bar)
+                    {
+                        Console.WriteLine(item);
+                    }
                 }
                 Console.WriteLine("VCG");
                 graphs.VerticalGraph.Edges.ToString<Edge>(format: "{0}\n", end: "", begin: "").Write();
@@ -84,32 +92,40 @@ namespace Glitter
             }
         }
 
-        public IEnumerable<(string, (double upper, double horizontal, double lower))> GetInductanceCSV(bool WriteCSV = false)
+        public IEnumerable<(string, List<((string upper, string lower), (double upper, double horizontal, double lower))>)> GetInductanceEnum(bool WriteCSV = false)
         {
-            var temp = wires.Select(a => (a.Key, calc.GetInductance(a.Key)));
+            var temp = wires.Select(a => (a.Key, calc.GetInductances(a.Key)));
             if (WriteCSV)
             {
                 using (var streamWriter = new StreamWriter("InductanceResult.csv"))
                 {
-                    foreach (var (net, (upper, horizontal, lower)) in temp)
+                    foreach (var item in temp)
                     {
-                        streamWriter.Write($"{net},{upper},{horizontal},{lower}\n");
+                        foreach (var foo in item.Item2)
+                        {
+                            streamWriter.Write($"{item.Key},{foo.Item1},{foo.Item2.upper},{foo.Item2.horizontal},{foo.Item2.lower}\n");
+                        }
+
                     }
                 }
             }
             return temp;
         }
 
-        public IEnumerable<(string net, (double upper, double horizontal, double lower) length)> GetSegmentLengthCSV(bool WriteCSV = false)
+        public  IEnumerable<(string, List<((string upper, string lower), (double upper, double horizontal, double lower))>)> GetSegmentLengthEnum(bool WriteCSV = false)
         {
-            var temp = wires.Select(a => (a.Key, calc.GetLength(a.Key)));
+            var temp = wires.Select(a => (a.Key, calc.GetLengths(a.Key)));
             if (WriteCSV)
             {
                 using (var streamWriter = new StreamWriter("SegmentLength.csv"))
                 {
-                    foreach (var (net, (upper, horizontal, lower)) in temp)
+                    foreach (var item in temp)
                     {
-                        streamWriter.Write($"{net},{upper},{horizontal},{lower}\n");
+                        foreach (var foo in item.Item2)
+                        {
+                            streamWriter.Write($"{item.Key},{foo.Item1},{foo.Item2.upper},{foo.Item2.horizontal},{foo.Item2.lower}\n");
+                        }
+
                     }
                 }
             }
