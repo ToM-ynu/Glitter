@@ -85,4 +85,15 @@ namespace Glitter
         public double Value { get => value; set => this.value = value; }
 
     }
+
+    public class InductCeRange
+    {
+        string netName;
+        double min;
+        double max;
+
+        public string Width { get => netName; set => netName = value; }
+        public double Min { get => min; set => this.min = value; }
+        public double Max { get => max; set => this.max = value; }
+    }
 }

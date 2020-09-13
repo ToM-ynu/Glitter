@@ -176,7 +176,7 @@ namespace Glitter
         }
     }
 
-    class Graph : AdjacencyGraph<string, Edge>
+    internal class Graph : AdjacencyGraph<string, Edge>
     {
         public void AddUndirectedEdge(Edge edge)
         {
