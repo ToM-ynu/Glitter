@@ -44,6 +44,12 @@ namespace Glitter
                 CreateHorizontalGraph();
                 CalcLocalMaximumDensity();
             }
+            {
+                Console.WriteLine("DGP no VCG problem solver is runnneing !!!!!!!");
+                var hoge = horizontalGraph.Edges.First();
+                verticalGraph.AddEdge(hoge);
+                horizontalGraph.RemoveEdge(hoge);
+            }
         }
 
         private bool CreateVerticalGraph()
