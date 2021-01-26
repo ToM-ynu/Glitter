@@ -49,7 +49,7 @@ namespace Glitter
 
             while (unprocessedSet.Count() != 2)
             {
-                var flag = NodeSelection(unprocessedSet);
+                _ = NodeSelection(unprocessedSet);
                 var order = EdgeSelection(unprocessedSet);
                 foreach (var (net, bound, height) in order)
                 {
@@ -94,7 +94,7 @@ namespace Glitter
                 if (LabelList.Select(a => a.Item2.Source).Contains("-1"))
                     return false;
                 var hoge = LabelList.First();
-                AddEdgeWeightedDirectedGraph(hoge.a, hoge.Item2);
+                ConvertUndirectedEdgeToDirectedEdge(hoge.a, hoge.Item2);
 #if DEBUG
                 if (ConsoleOut == true)
                 {
@@ -131,23 +131,21 @@ namespace Glitter
             HB.AddEdgeRange(HorizontalConstrainGraph.Edges.Where(a => HB.Vertices.Contains(a.Source) && HB.Vertices.Contains(a.Target)));
             if (HT.Edges.Count() < HB.Edges.Count())
             {
-                int count = 0;
                 //Do TOP
+                int count = 0;
                 while (CT.Count() != 0)
                 {
                     if (count++ > 100) throw new Exception("CT止まらん");
-
-                    IEnumerable<(string Key, double Value)> PT
-                        = CT.Select(a => (a.Key, Math.Max(ancw[a.Key] + desw[a.Key], LocalMaximumDensity[a.Key])));
-                    var PTLARGE = PT.Max(a => a.Value);
+                    IEnumerable<(string Key, double Value)> temp = CT.Select(a => (a.Key, Math.Max(ancw[a.Key] + desw[a.Key], LocalMaximumDensity[a.Key])));
+                    var PTLARGE = temp.Max(a => a.Value);
+                    var PT = temp.Where(a => a.Value == PTLARGE);
 
                     // rule 1 (5) find ancw+desw==PTLARGE
-                    var PT_rule1 = PT.Where(a => a.Value == PTLARGE).ToList();
-                    // rule 2 (7)  find larget local Maximum Density
+                    var PT_rule1 = PT.Where(a => (ancw[a.Key] + desw[a.Key]) == PTLARGE).ToList();
+                    // rule 2 (6)  find larget local Maximum Density
                     var PTMAX = PT_rule1.Max(a => LocalMaximumDensity[a.Key]);
                     var PT_rule2 = PT_rule1.Where(a => LocalMaximumDensity[a.Key] == PTMAX).ToList();
-
-                    // rule 3 (8) find largest desw
+                    // rule 3 (7) find largest desw
                     var PTDeswMax = PT_rule2.Select(a => a.Key).Max(b => desw[b]);
                     var PT_rule3 = PT_rule2.Where(a => desw[a.Key] == PTDeswMax).ToList();
 
@@ -177,7 +175,7 @@ namespace Glitter
                                             = CB.Select(a => (a.Key, Math.Max(ancw[a.Key] + desw[a.Key], LocalMaximumDensity[a.Key])));
                     var PBLARGE = PB.Max(a => a.Value);
                     // rule 1 (13) find ancw+decw==PTLARGE
-                    var PB_rule1 = PB.Where(a => a.Value == PBLARGE).ToList();
+                    var PB_rule1 = PB.Where(a => (ancw[a.Key] + desw[a.Key]) == PBLARGE).ToList();
                     // rule 2 (14)  find larget local Maximum Density
                     var PBMAX = PB_rule1.Max(b => LocalMaximumDensity[b.Key]);
                     var PB_rule2 = PB_rule1.Where(a => LocalMaximumDensity[a.Key] == PBMAX).ToList();
@@ -257,17 +255,17 @@ namespace Glitter
         }
 
 
-        private void AddEdgeWeightedDirectedGraph(Edge removeEdge, (double Label, string Source, string Target) addedge)
+        private void ConvertUndirectedEdgeToDirectedEdge(Edge removeEdge, (double Label, string Source, string Target) addEdge)
         {
-            AddEdgeWeightedDirectedGraph(removeEdge, (addedge.Source, addedge.Target));
+            ConvertUndirectedEdgeToDirectedEdge(removeEdge, (addEdge.Source, addEdge.Target));
         }
-        private void AddEdgeWeightedDirectedGraph(Edge removeEdge, (string Source, string Target) addedge)//いい名前がない
+        private void ConvertUndirectedEdgeToDirectedEdge(Edge removeEdge, (string Source, string Target) addEdge)//いい名前がない
         {
             WeightedUndirectedGraph.RemoveEdge(removeEdge);
-            WeightedDirectedGraph.TryGetEdge(addedge.Source, addedge.Target, out Edge edge);
+            WeightedDirectedGraph.TryGetEdge(addEdge.Source, addEdge.Target, out Edge edge);
             if (edge == null)//this is new edge
             {
-                edge = new Edge($"net{addedge.Source}{addedge.Target}", addedge.Source, addedge.Target, removeEdge.Weight);
+                edge = new Edge($"net{addEdge.Source}{addEdge.Target}", addEdge.Source, addEdge.Target, removeEdge.Weight);
             }
             else
             {
@@ -292,7 +290,7 @@ namespace Glitter
                     foreach (var removeEdge in new ConcurrentBag<Edge>(weightedUndirectedGraph.Edges.Where(a => a.Target == net || a.Source == net)))
                     {
                         var source = removeEdge.Target == net ? removeEdge.Source : removeEdge.Target;
-                        AddEdgeWeightedDirectedGraph(removeEdge, (source, net));
+                        ConvertUndirectedEdgeToDirectedEdge(removeEdge, (source, net));
                     }
                 }
             }
@@ -303,7 +301,7 @@ namespace Glitter
                     foreach (var removeEdge in new ConcurrentBag<Edge>(weightedUndirectedGraph.Edges.Where(a => a.Target == net || a.Source == net)))
                     {
                         var target = removeEdge.Source == net ? removeEdge.Target : removeEdge.Source;
-                        AddEdgeWeightedDirectedGraph(removeEdge, (net, target));
+                        ConvertUndirectedEdgeToDirectedEdge(removeEdge, (net, target));
                     }
                 }
             }

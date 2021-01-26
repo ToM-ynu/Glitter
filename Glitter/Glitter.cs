@@ -1,14 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Text;
-using CsvHelper;
-using QuickGraph;
 using QuickGraph.Algorithms;
-using QuickGraph.Algorithms.Observers;
-using QuickGraph.Algorithms.ShortestPath;
 
 namespace Glitter
 {
@@ -35,7 +29,7 @@ namespace Glitter
             IsDAG = graphs.IsDAG;
         }
 
-        public void Calc(bool ConsoleOut = false)
+        public void Calc(bool ConsoleOut = true)
         {
             var weightedGraphs = new CreateWeightedGraph(graphs.VerticalGraph, graphs.HorizontalGraph, wires);
             var selection = new WeightedGraphSelection(weightedGraphs.weightedDirectedGraph, weightedGraphs.weightedUndirectedGraph, graphs.LocalMaximumDensity, wires, graphs.HorizontalGraph);

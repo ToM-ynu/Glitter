@@ -120,53 +120,52 @@ namespace Glitter
             var IMOS = new Dictionary<double, double>();
             foreach (var net in new HashSet<string>(terminals.Select(a => a.net)))
             {
-                var horizontalWidth = wires[net].horizontal + minSpacing;
-                var leftWireWidth = (wires[net].upper + minSpacing) / 2;
-                var rightWireWidth = (wires[net].lower + minSpacing) / 2;
+                var horizontalWireWidth = wires[net].horizontal + minSpacing;
+                var leftVerticalWireWidth = (wires[net].upper + minSpacing) / 2.0;
+                var rightVerticalWireWidth = (wires[net].lower + minSpacing) / 2.0;
                 var foo = terminals.Where(a => a.net == net);
-                var left = foo.Min(a => a.xAxis) - leftWireWidth;
-                var right = foo.Max(a => a.xAxis) + rightWireWidth;
+                var left = foo.Min(a => a.xAxis) - leftVerticalWireWidth;
+                var right = foo.Max(a => a.xAxis) + rightVerticalWireWidth;
                 if (IMOS.ContainsKey(left))
                 {
-                    IMOS[left] += horizontalWidth;
+                    IMOS[left] += horizontalWireWidth;
                 }
                 else
                 {
-                    IMOS[left] = horizontalWidth;
+                    IMOS[left] = horizontalWireWidth;
                 }
 
                 if (IMOS.ContainsKey(right))
                 {
-                    IMOS[right] += -horizontalWidth;
+                    IMOS[right] += -horizontalWireWidth;
                 }
                 else
                 {
-                    IMOS[right] = -horizontalWidth;
-                    ;
+                    IMOS[right] = -horizontalWireWidth;
                 }
             }
 
-            var temp = IMOS.Select(a => (a.Key, a.Value)).OrderBy(a => a.Key).ToList();
+            var maxmumDensityList = new List<(double Key, double Value)>();
+            IMOS.Select(a => (a.Key, a.Value)).OrderBy(a => a.Key).ToList();
             //累積和取らないといかんでしょ
             var value = 0.0;
-            for (var i = 0; i < temp.Count; i++)
+            foreach (var (Key, Value) in IMOS.Select(a => (a.Key, a.Value)).OrderBy(a => a.Key))
             {
-                value += temp[i].Value;
-                temp[i] = (temp[i].Key, value);
+                value += Value;
+                maxmumDensityList.Add((Key, value));
             }
             LocalMaximumDensity = new Dictionary<string, double>();
             foreach (var net in new HashSet<string>(terminals.Select(a => a.net)))
             {
-                var horizontalWidth = wires[net].horizontal + minSpacing;
-                var leftWireWidth = (wires[net].upper + minSpacing) / 2;
-                var rightWireWidth = (wires[net].lower + minSpacing) / 2;
-                var foo = terminals.Where(a => a.net == net);
-                var min = foo.Min(a => a.xAxis) - leftWireWidth;
-                var minIndex = temp.FindIndex(a => a.Key == min);
-                var max = foo.Max(a => a.xAxis) + rightWireWidth;
-                var maxIndex = temp.FindIndex(a => a.Key == max);
-                //min~max間での最大Valueを探せば良い。
-                var density = temp.GetRange(minIndex, Math.Abs(maxIndex - minIndex)).Select(a => a.Value).Max();
+                var leftVerticalWireWidth = (wires[net].upper + minSpacing) / 2.0;
+                var rightVerticalWireWidth = (wires[net].lower + minSpacing) / 2.0;
+                var terminal = terminals.Where(a => a.net == net);
+                var left = terminal.Min(a => a.xAxis) - leftVerticalWireWidth;
+                var leftIndex = maxmumDensityList.FindIndex(a => a.Key == left);
+                var right = terminal.Max(a => a.xAxis) + rightVerticalWireWidth;
+                var rightIndex = maxmumDensityList.FindIndex(a => a.Key == right);
+                //left~right間での最大Valueを探せば良い。
+                var density = maxmumDensityList.GetRange(leftIndex, Math.Abs(rightIndex - leftIndex)).Select(a => a.Value).Max();
                 LocalMaximumDensity.Add(net, density + boundaryClearance * 2);
             }
             MaxDensity = LocalMaximumDensity.Select(a => a.Value).Max();
