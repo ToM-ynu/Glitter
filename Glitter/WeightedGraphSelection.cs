@@ -49,7 +49,7 @@ namespace Glitter
 
             while (unprocessedSet.Count() != 2)
             {
-                _ = NodeSelection(unprocessedSet);
+                var flag = NodeSelection(unprocessedSet);
                 var order = EdgeSelection(unprocessedSet);
                 foreach (var (net, bound, height) in order)
                 {
@@ -94,7 +94,7 @@ namespace Glitter
                 if (LabelList.Select(a => a.Item2.Source).Contains("-1"))
                     return false;
                 var hoge = LabelList.First();
-                ConvertUndirectedEdgeToDirectedEdge(hoge.a, hoge.Item2);
+                AddEdgeWeightedDirectedGraph(hoge.a, hoge.Item2);
 #if DEBUG
                 if (ConsoleOut == true)
                 {
@@ -131,25 +131,31 @@ namespace Glitter
             HB.AddEdgeRange(HorizontalConstrainGraph.Edges.Where(a => HB.Vertices.Contains(a.Source) && HB.Vertices.Contains(a.Target)));
             if (HT.Edges.Count() < HB.Edges.Count())
             {
-                //Do TOP
                 int count = 0;
+                //Do TOP
                 while (CT.Count() != 0)
                 {
                     if (count++ > 100) throw new Exception("CT止まらん");
-                    IEnumerable<(string Key, double Value)> temp = CT.Select(a => (a.Key, Math.Max(ancw[a.Key] + desw[a.Key], LocalMaximumDensity[a.Key])));
-                    var PTLARGE = temp.Max(a => a.Value);
-                    var PT = temp.Where(a => a.Value == PTLARGE);
 
-                    // rule 1 (5) find ancw+desw==PTLARGE
-                    var PT_rule1 = PT.Where(a => (ancw[a.Key] + desw[a.Key]) == PTLARGE).ToList();
+                    List<(string Key, double Value)> PT
+                        = CT.Select(a => (a.Key, Math.Max(ancw[a.Key] + desw[a.Key], LocalMaximumDensity[a.Key]))).ToList();
+                    var PTLARGE = PT.Max(a => a.Value);
+
+                    // rule 1 (5) if( there are nodes in PT with ancw(i) +desw(i) ==LARGE)
+                    //ancw+deswがlocal max densityより大きいやつがある場合はそれをまずやる。
+                    if (PT.Where(a => a.Value == PTLARGE).Count() != 0)
+                    {
+                        PT = PT.Where(a => a.Value == PTLARGE).ToList();
+                    }
                     // rule 2 (6)  find larget local Maximum Density
-                    var PTMAX = PT_rule1.Max(a => LocalMaximumDensity[a.Key]);
-                    var PT_rule2 = PT_rule1.Where(a => LocalMaximumDensity[a.Key] == PTMAX).ToList();
-                    // rule 3 (7) find largest desw
-                    var PTDeswMax = PT_rule2.Select(a => a.Key).Max(b => desw[b]);
-                    var PT_rule3 = PT_rule2.Where(a => desw[a.Key] == PTDeswMax).ToList();
+                    var PTMAX = PT.Max(a => LocalMaximumDensity[a.Key]);
+                    PT = PT.Where(a => LocalMaximumDensity[a.Key] == PTMAX).ToList();
 
-                    var processPT = PT_rule3.Select(a => a.Key).ToList();
+                    // rule 3 (8) find largest desw
+                    var PTDeswMax = PT.Select(a => a.Key).Max(b => desw[b]);
+                    PT = PT.Where(a => desw[a.Key] == PTDeswMax).ToList();
+
+                    var processPT = PT.Select(a => a.Key).ToList();
                     // processed it
 
                     ///DO PROCESSSSS
@@ -171,18 +177,24 @@ namespace Glitter
                 while (CB.Count() != 0)
                 {
                     if (count++ > 100) throw new Exception("CB止まらん");
-                    IEnumerable<(string Key, double Value)> PB
-                                            = CB.Select(a => (a.Key, Math.Max(ancw[a.Key] + desw[a.Key], LocalMaximumDensity[a.Key])));
+                    List<(string Key, double Value)> PB
+                                            = CB.Select(a => (a.Key, Math.Max(ancw[a.Key] + desw[a.Key], LocalMaximumDensity[a.Key]))).ToList();
                     var PBLARGE = PB.Max(a => a.Value);
                     // rule 1 (13) find ancw+decw==PTLARGE
-                    var PB_rule1 = PB.Where(a => (ancw[a.Key] + desw[a.Key]) == PBLARGE).ToList();
+
+                    if (PB.Where(a => a.Value == PBLARGE).Count() != 0)
+                    {
+                        PB = PB.Where(a => a.Value == PBLARGE).ToList();
+                    }
                     // rule 2 (14)  find larget local Maximum Density
-                    var PBMAX = PB_rule1.Max(b => LocalMaximumDensity[b.Key]);
-                    var PB_rule2 = PB_rule1.Where(a => LocalMaximumDensity[a.Key] == PBMAX).ToList();
+                    var PBMAX = PB.Max(b => LocalMaximumDensity[b.Key]);
+                    PB = PB.Where(a => LocalMaximumDensity[a.Key] == PBMAX).ToList();
+
                     // rule 3 (15) find largest decw
-                    var PBAncwMax = PB_rule2.Select(a => a.Key).Max(b => ancw[b]);
-                    var PB_rule3 = PB_rule2.Where(a => ancw[a.Key] == PBAncwMax).ToList();
-                    var processPB = PB_rule3.Select(a => a.Key).ToList();
+                    var PBAncwMax = PB.Select(a => a.Key).Max(b => ancw[b]);
+                    PB = PB.Where(a => ancw[a.Key] == PBAncwMax).ToList();
+
+                    var processPB = PB.Select(a => a.Key).ToList();
                     // processed it
 
                     ///DO PROCESSSSS
@@ -255,17 +267,17 @@ namespace Glitter
         }
 
 
-        private void ConvertUndirectedEdgeToDirectedEdge(Edge removeEdge, (double Label, string Source, string Target) addEdge)
+        private void AddEdgeWeightedDirectedGraph(Edge removeEdge, (double Label, string Source, string Target) addedge)
         {
-            ConvertUndirectedEdgeToDirectedEdge(removeEdge, (addEdge.Source, addEdge.Target));
+            AddEdgeWeightedDirectedGraph(removeEdge, (addedge.Source, addedge.Target));
         }
-        private void ConvertUndirectedEdgeToDirectedEdge(Edge removeEdge, (string Source, string Target) addEdge)//いい名前がない
+        private void AddEdgeWeightedDirectedGraph(Edge removeEdge, (string Source, string Target) addedge)//いい名前がない
         {
             WeightedUndirectedGraph.RemoveEdge(removeEdge);
-            WeightedDirectedGraph.TryGetEdge(addEdge.Source, addEdge.Target, out Edge edge);
+            WeightedDirectedGraph.TryGetEdge(addedge.Source, addedge.Target, out Edge edge);
             if (edge == null)//this is new edge
             {
-                edge = new Edge($"net{addEdge.Source}{addEdge.Target}", addEdge.Source, addEdge.Target, removeEdge.Weight);
+                edge = new Edge($"net{addedge.Source}{addedge.Target}", addedge.Source, addedge.Target, removeEdge.Weight);
             }
             else
             {
@@ -290,7 +302,7 @@ namespace Glitter
                     foreach (var removeEdge in new ConcurrentBag<Edge>(weightedUndirectedGraph.Edges.Where(a => a.Target == net || a.Source == net)))
                     {
                         var source = removeEdge.Target == net ? removeEdge.Source : removeEdge.Target;
-                        ConvertUndirectedEdgeToDirectedEdge(removeEdge, (source, net));
+                        AddEdgeWeightedDirectedGraph(removeEdge, (source, net));
                     }
                 }
             }
@@ -301,7 +313,7 @@ namespace Glitter
                     foreach (var removeEdge in new ConcurrentBag<Edge>(weightedUndirectedGraph.Edges.Where(a => a.Target == net || a.Source == net)))
                     {
                         var target = removeEdge.Source == net ? removeEdge.Target : removeEdge.Source;
-                        ConvertUndirectedEdgeToDirectedEdge(removeEdge, (net, target));
+                        AddEdgeWeightedDirectedGraph(removeEdge, (net, target));
                     }
                 }
             }
