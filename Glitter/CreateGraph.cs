@@ -46,9 +46,27 @@ namespace Glitter
             }
             {
                 Console.WriteLine("DGP no VCG problem solver is runnneing !!!!!!!");
-                var hoge = horizontalGraph.Edges.First();
-                verticalGraph.AddEdge(hoge);
-                horizontalGraph.RemoveEdge(hoge);
+                if (horizontalGraph.Edges.Count() != 0)
+                {
+                    var ioCountDict = new Dictionary<string, int>();
+                    foreach (var edge in horizontalGraph.Edges)
+                    {
+                        ioCountDict[edge.Target] = 0;
+                    }
+                    //入ってくる量が最大のやつを一番下にするのがいいのではないかという仮説
+                    foreach (var edge in horizontalGraph.Edges)
+                    {
+                        ioCountDict[edge.Target]++;
+                    }
+                    var inMax = ioCountDict.OrderByDescending(a => a.Value).First().Key;
+                    var edges = horizontalGraph.Edges.Where(a => a.Target == inMax).ToList();
+                    foreach (var maxEdge in edges)
+                    {
+                        verticalGraph.AddEdge(maxEdge);
+                        horizontalGraph.RemoveEdge(maxEdge);
+                    }
+
+                }
             }
         }
 
